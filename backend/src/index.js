@@ -17,6 +17,7 @@ app.use('/api/admin/materiais',  require('./routes/admin/materiais'));
 app.use('/api/admin/produtos',   require('./routes/admin/produtos'));
 
 app.use('/api/carrinho', require('./routes/carrinho'));
+app.use('/api/pedidos', require('./routes/pedidos'));
 
 app.use(errorHandler);
 

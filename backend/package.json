@@ -8,7 +8,8 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "jest --runInBand"
+    "test": "jest --runInBand",
+    "seed": "node src/db/seed-admin.js"
   },
   "keywords": [],
   "author": "",

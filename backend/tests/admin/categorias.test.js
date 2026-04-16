@@ -36,6 +36,27 @@ describe('POST /api/admin/categorias', () => {
   });
 });
 
+describe('PUT /api/admin/categorias/:id', () => {
+  it('updates category name', async () => {
+    const cat = await createCategory({ name: 'Old', slug: 'old-slug' });
+    const res = await request(app)
+      .put(`/api/admin/categorias/${cat.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'New Name' });
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe('New Name');
+    expect(res.body.slug).toBe('old-slug');
+  });
+
+  it('returns 404 for non-existent category', async () => {
+    const res = await request(app)
+      .put('/api/admin/categorias/00000000-0000-0000-0000-000000000000')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Updated' });
+    expect(res.status).toBe(404);
+  });
+});
+
 describe('DELETE /api/admin/categorias/:id', () => {
   it('deletes unused category', async () => {
     const cat = await createCategory();

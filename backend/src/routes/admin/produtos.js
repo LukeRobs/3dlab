@@ -98,7 +98,8 @@ router.delete('/:id', async (req, res, next) => {
       );
       return res.json(rows[0]);
     }
-    await pool.query(`DELETE FROM products WHERE id = $1`, [req.params.id]);
+    const { rowCount } = await pool.query(`DELETE FROM products WHERE id = $1`, [req.params.id]);
+    if (rowCount === 0) return res.status(404).json({ error: 'Product not found' });
     res.status(204).end();
   } catch (err) { next(err); }
 });
@@ -124,10 +125,11 @@ router.post('/:id/materiais', async (req, res, next) => {
 router.put('/:id/materiais/:matId', async (req, res, next) => {
   try {
     const { quantity_grams } = req.body;
-    await pool.query(
+    const { rowCount } = await pool.query(
       `UPDATE product_materials SET quantity_grams = $1 WHERE product_id = $2 AND material_id = $3`,
       [quantity_grams, req.params.id, req.params.matId]
     );
+    if (rowCount === 0) return res.status(404).json({ error: 'Material assignment not found' });
     await recalculateProduct(req.params.id);
     res.status(204).end();
   } catch (err) { next(err); }

@@ -28,7 +28,13 @@ A full-stack product management platform for a 3D-printed geek merchandise busin
 | Auth | JWT (access token, 7-day expiry, stored in localStorage) |
 | Monorepo | npm workspaces |
 
-**Security note:** Storing JWT in localStorage is vulnerable to XSS. This is an accepted MVP trade-off. A future iteration should migrate to httpOnly cookies or add a refresh token strategy.
+**Security note (MVP trade-off):** Storing JWT in localStorage is vulnerable to XSS. Because admin users share the same frontend origin as the public catalog, a successful XSS attack on the public surface could expose admin tokens. Compensating controls required in MVP:
+- Strict input validation and output escaping on all user-controlled content
+- No `dangerouslySetInnerHTML` in the frontend
+- Strict CORS policy
+- All admin routes protected by both auth middleware and role guard
+
+Future iteration should migrate to httpOnly cookies with refresh tokens.
 
 ### Admin Account Bootstrap
 
@@ -87,10 +93,13 @@ views_count INTEGER DEFAULT 0, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ
 
 ### `product_images`
 ```
-id UUID PK, product_id UUID FK, url TEXT, is_primary BOOLEAN DEFAULT false
+id UUID PK, product_id UUID FK, url TEXT,
+is_primary BOOLEAN DEFAULT false,
+sort_order INTEGER NOT NULL DEFAULT 0,
+created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 ```
 
-Images are stored as URLs. In MVP, admins provide URLs directly (external hosting or a local `/uploads` folder served by Express). No file upload infrastructure required in MVP. Display order of non-primary images follows insertion order (no explicit `sort_order` field in MVP).
+Images are returned ordered by `is_primary DESC, sort_order ASC, created_at ASC`. In MVP, admins provide URLs directly (external hosting or a local `/uploads` folder served by Express). No file upload infrastructure required in MVP.
 
 ### `materials`
 ```
@@ -132,7 +141,7 @@ id UUID PK, user_id UUID FK, status TEXT ('pending'|'confirmed'|'cancelled') DEF
 total_price DECIMAL, whatsapp_message TEXT, created_at TIMESTAMPTZ
 ```
 
-Orders are created with `status: 'pending'`. Admin can transition to `confirmed` or `cancelled` via the admin panel.
+**Order lifecycle:** Orders created by `POST /api/pedidos` represent **checkout intents** — the customer initiated the flow and was redirected to WhatsApp, but may not have sent the message. An order stays `pending` until the team confirms customer contact via WhatsApp and updates the status to `confirmed`. Only `confirmed` orders count as actual sales in dashboard metrics.
 
 ### `order_items`
 ```
@@ -140,29 +149,39 @@ id UUID PK, order_id UUID FK, product_id UUID FK,
 quantity INTEGER, unit_price DECIMAL
 ```
 
+### Delete Rules
+
+Deletes must validate references before mutating:
+
+- **Categories:** Block delete if any product references the category. Return 409 with a clear message.
+- **Materials:** Block delete if any `product_materials` row references the material. Return 409.
+- **Products:** If the product has `order_items` history, set `is_active = false` (soft delete) instead of hard deleting. Hard delete is only permitted when no dependent rows exist.
+
 ### Cost Calculation Formula
 
 ```
-material_cost    = SUM(quantity_grams × price_per_gram) for each product_material
-electricity_cost = (print_time_minutes / 60) × (printer_power_watts / 1000) × kwh_price
+material_cost    = SUM(quantity_grams * price_per_gram) for each product_material
+electricity_cost = (print_time_minutes / 60) * (printer_power_watts / 1000) * kwh_price
 cost_calculated  = material_cost + electricity_cost
 ```
 
-`cost_calculated` is recomputed and stored on the product row in three cases:
+`cost_calculated` is recomputed and stored on the product row in four cases:
 1. Product is saved (create or update)
 2. A `product_materials` row is added, updated, or removed for that product
-3. `PUT /api/admin/configuracoes` updates electricity settings — triggers a **synchronous bulk recalculation** of `cost_calculated` for all products before returning the response
+3. `PUT /api/admin/configuracoes` updates electricity settings — triggers synchronous bulk recalculation of all products
+4. `PUT /api/admin/materiais/:id` updates `price_per_gram` — triggers synchronous recalculation of all products linked to that material
 
-**MVP note:** The bulk recalculation on settings change is synchronous and acceptable for MVP given the small catalog size. If the catalog grows to hundreds of products this should move to a background job.
+**MVP note:** Synchronous bulk recalculations (cases 3 and 4) are acceptable for MVP given the small catalog. If the catalog grows to hundreds of products these should move to background jobs.
 
 ### WhatsApp Message Template
 
 When `POST /api/pedidos` creates an order, the `whatsapp_message` field is generated from:
 
 ```
-Olá! Gostaria de fazer um pedido:
+Ola! Gostaria de fazer um pedido:
 
-{order_items: "- {quantity}x {product_name} — R$ {unit_price}\n"}
+- {quantity}x {product_name} - R$ {unit_price}
+(repeated for each order item)
 
 Total: R$ {total_price}
 Pedido #{order_id_short}
@@ -207,20 +226,21 @@ When a guest clicks "Finalizar Compra" they are redirected to `/login?redirect=/
 | `/admin/pedidos` | All orders with line items — status update inline |
 | `/admin/configuracoes` | WhatsApp number, electricity, store info |
 
-Delete actions are available directly from listing pages via an inline button on each row (products, materials, categories). No separate delete route is needed.
+Delete actions are available directly from listing pages via an inline button on each row (products, materials, categories). Blocked deletes return an error toast explaining why.
 
 ### Cart & Purchase Flow
 
 ```
-1. Guest adds item → saved to localStorage
-2. Logged-in user adds item → POST /api/carrinho writes directly to DB (no localStorage used)
-3. Guest clicks "Finalizar Compra" → redirect to /login?redirect=/carrinho
+1. Guest adds item -> saved to localStorage
+2. Logged-in user adds item -> POST /api/carrinho writes directly to DB
+3. Guest clicks "Finalizar Compra" -> redirect to /login?redirect=/carrinho
 4. /login page shows link to /cadastro for new customers
-5. After login/register → POST /api/carrinho/merge (localStorage → DB, quantities summed on conflict)
-6. Back to /carrinho → customer reviews and confirms
-7. POST /api/pedidos → order_items created from cart_items, cart_items deleted, WhatsApp message generated
+5. After login/register -> POST /api/carrinho/merge (localStorage -> DB, quantities summed on conflict)
+6. Back to /carrinho -> customer reviews and confirms
+7. POST /api/pedidos -> order created (status: pending), cart_items cleared, WhatsApp message generated
 8. Browser opens wa.me link with pre-filled message
-9. Order appears in /conta/pedidos
+9. Order appears in /conta/pedidos as "pending"
+10. Admin confirms via WhatsApp contact -> updates status to "confirmed" in /admin/pedidos
 ```
 
 ---
@@ -235,14 +255,15 @@ POST /api/auth/login       — login for both roles, returns JWT (7-day expiry)
 
 ### Public Catalog
 ```
-GET  /api/produtos         — list active products (filter: ?category=slug, ?search=term)
-GET  /api/produtos/:slug   — product detail + increment views_count
-                             Response: product fields, images[], product_materials[]
-                             with material name and quantity_grams (no cost fields)
-GET  /api/categorias       — list categories (id, name, slug)
+GET  /api/produtos              — list active products (filter: ?category=slug, ?search=term)
+GET  /api/produtos/:slug        — product detail (no side effects)
+                                   Response: product fields, images[], product_materials[]
+                                   with material name and quantity_grams (no cost fields)
+POST /api/produtos/:slug/view   — increment views_count (called by frontend on detail page load)
+GET  /api/categorias            — list categories (id, name, slug)
 ```
 
-The admin categories listing (`GET /api/admin/categorias`) returns the same shape as the public endpoint. The admin frontend uses the public `GET /api/categorias` for read-only listing and the admin endpoints only for mutations (POST/PUT/DELETE).
+Using a dedicated `POST /api/produtos/:slug/view` endpoint keeps the GET idempotent and prevents view inflation from browser prefetching, crawlers, and retries.
 
 ### Cart (customer auth)
 ```
@@ -251,7 +272,7 @@ POST   /api/carrinho           — add item to DB cart; increments quantity if p
 PUT    /api/carrinho/:id       — update quantity
 DELETE /api/carrinho/:id       — remove item
 POST   /api/carrinho/merge     — merge localStorage cart into DB after login;
-                                 quantities summed on conflict (same product already in DB cart)
+                                  quantities summed on conflict
 ```
 
 **Frontend cart logic:** The frontend checks auth state before calling any cart API. Guests write to localStorage only and never call `POST /api/carrinho`. Logged-in users write directly to the DB via the API and do not use localStorage.
@@ -267,37 +288,37 @@ GET  /api/pedidos              — customer order history (includes order_items 
 GET    /api/admin/produtos           — list: id, name, price, cost_calculated, is_active, views_count
 POST   /api/admin/produtos           — create product
 PUT    /api/admin/produtos/:id       — update product; recalculates cost_calculated
-DELETE /api/admin/produtos/:id
+DELETE /api/admin/produtos/:id       — hard delete if no order history; soft delete (is_active=false) otherwise
 GET    /api/admin/produtos/:id       — full product: all fields + images[] + product_materials[]
 ```
 
 Full product response (single GET, PUT response):
 - All product fields including `cost_calculated`, `print_time_minutes`
-- `images[]` (id, url, is_primary)
+- `images[]` (id, url, is_primary, sort_order) ordered by `is_primary DESC, sort_order ASC, created_at ASC`
 - `product_materials[]` (material_id, name, type, price_per_gram, quantity_grams)
 
 ### Admin — Product Materials
 ```
-POST   /api/admin/produtos/:id/materiais          — assign material to product {material_id, quantity_grams}
+POST   /api/admin/produtos/:id/materiais          — assign material {material_id, quantity_grams}; triggers cost recalc
 PUT    /api/admin/produtos/:id/materiais/:matId   — update quantity_grams; triggers cost recalc
 DELETE /api/admin/produtos/:id/materiais/:matId   — remove material from product; triggers cost recalc
 ```
 
 ### Admin — Product Images
 ```
-POST   /api/admin/produtos/:id/images            — add image URL {url}
+POST   /api/admin/produtos/:id/images            — add image {url, sort_order}
 DELETE /api/admin/produtos/:id/images/:imgId     — remove image
-PUT    /api/admin/produtos/:id/images/:imgId     — set as primary (clears other is_primary flags)
+PUT    /api/admin/produtos/:id/images/:imgId     — update is_primary or sort_order
 ```
 
-Images are URL strings provided by the admin. MVP does not require file upload handling.
+Setting `is_primary: true` on one image clears the flag on all others for that product.
 
 ### Admin — Materials
 ```
 GET    /api/admin/materiais
 POST   /api/admin/materiais
-PUT    /api/admin/materiais/:id
-DELETE /api/admin/materiais/:id
+PUT    /api/admin/materiais/:id    — if price_per_gram changes, triggers cost recalc for linked products
+DELETE /api/admin/materiais/:id    — blocked if referenced by product_materials (409)
 ```
 
 ### Admin — Categories
@@ -305,14 +326,14 @@ DELETE /api/admin/materiais/:id
 GET    /api/admin/categorias
 POST   /api/admin/categorias
 PUT    /api/admin/categorias/:id
-DELETE /api/admin/categorias/:id
+DELETE /api/admin/categorias/:id   — blocked if referenced by products (409)
 ```
 
 ### Admin — Orders
 ```
-GET /api/admin/pedidos              — all orders with order_items included per order
+GET /api/admin/pedidos              — all orders with order_items included
 GET /api/admin/pedidos/:id          — single order detail with order_items
-PUT /api/admin/pedidos/:id          — update status ('pending'→'confirmed' or 'cancelled')
+PUT /api/admin/pedidos/:id          — update status ('pending'->'confirmed' or 'cancelled')
 ```
 
 ### Admin — Users
@@ -322,21 +343,26 @@ POST /api/admin/usuarios            — create a new admin user (role: 'admin')
 
 ### Admin — Dashboard & Config
 ```
-GET /api/admin/dashboard       — metrics: top viewed, orders count, margins, total sales
+GET /api/admin/dashboard       — metrics (see Dashboard Metrics section)
 GET /api/admin/configuracoes   — get all settings
-PUT /api/admin/configuracoes   — update settings + trigger bulk cost recalculation
+PUT /api/admin/configuracoes   — update settings; if electricity values change, triggers bulk cost recalc
 ```
 
 ---
 
 ## Dashboard Metrics
 
-| Metric | Source |
-|---|---|
-| Most viewed products | `products.views_count` ORDER BY DESC LIMIT 10 |
-| WhatsApp orders generated | COUNT of `orders` WHERE status != 'cancelled' |
-| Cost vs selling price (margin) | `(price - cost_calculated) / price × 100` per product |
-| Total sales value | SUM of `orders.total_price` WHERE status != 'cancelled' |
+The dashboard distinguishes checkout funnel events from confirmed revenue.
+
+| Metric | Definition | Source |
+|---|---|---|
+| Checkout intents created | All orders ever created | COUNT(orders) |
+| Pending orders | Awaiting confirmation | COUNT(orders WHERE status = 'pending') |
+| Confirmed orders | Team confirmed contact | COUNT(orders WHERE status = 'confirmed') |
+| Cancelled orders | Cancelled by team | COUNT(orders WHERE status = 'cancelled') |
+| Confirmed sales value | Revenue from confirmed orders | SUM(total_price WHERE status = 'confirmed') |
+| Top viewed products | Most popular in catalog | products.views_count ORDER BY DESC LIMIT 10 |
+| Product margin | Cost vs price per product | (price - cost_calculated) / price * 100 |
 
 ---
 
@@ -346,11 +372,13 @@ PUT /api/admin/configuracoes   — update settings + trigger bulk cost recalcula
 - Global error middleware returns `{ error: "message" }` with appropriate HTTP status
 - Input validation on all routes before DB access
 - 401 for expired/missing JWT, 403 for insufficient role
+- 409 for blocked delete operations (referenced records)
 
 ### Frontend
 - API errors shown as toast notifications
 - localStorage cart parsed with try/catch — corrupted state resets silently to empty cart
 - Protected routes redirect to login preserving `?redirect` param
+- Blocked delete actions display the 409 error message from the API
 
 ---
 
@@ -358,7 +386,7 @@ PUT /api/admin/configuracoes   — update settings + trigger bulk cost recalcula
 
 ### Backend
 - Integration tests with real PostgreSQL database (Jest + Supertest)
-- Coverage targets: auth flows, order creation and cart clearing, cost calculation, cart merge
+- Coverage targets: auth flows, order creation and cart clearing, cost calculation (all 4 recalculation triggers), cart merge, delete blocking rules
 
 ### Frontend
 - Manual testing in MVP phase
@@ -374,4 +402,5 @@ PUT /api/admin/configuracoes   — update settings + trigger bulk cost recalcula
 - Post-processing materials (paint, primer) — add in future iteration
 - File upload for product images (URLs only in MVP)
 - JWT refresh tokens (7-day expiry, re-login required after expiry)
-- XSS-hardened token storage (httpOnly cookies) — deferred post-MVP
+- httpOnly cookie auth — deferred post-MVP
+- Background jobs for bulk cost recalculation — deferred if catalog stays small

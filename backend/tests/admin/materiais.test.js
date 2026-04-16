@@ -10,6 +10,22 @@ beforeEach(async () => {
   adminToken = tokenFor(admin);
 });
 
+describe('GET /api/admin/materiais', () => {
+  it('returns all materials for admin', async () => {
+    await createMaterial({ name: 'PLA Red' });
+    const res = await request(app)
+      .get('/api/admin/materiais')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+  });
+
+  it('returns 401 without token', async () => {
+    const res = await request(app).get('/api/admin/materiais');
+    expect(res.status).toBe(401);
+  });
+});
+
 describe('POST /api/admin/materiais', () => {
   it('creates a material', async () => {
     const res = await request(app)
@@ -18,6 +34,14 @@ describe('POST /api/admin/materiais', () => {
       .send({ name: 'PLA Blue', type: 'filament', price_per_gram: 0.05 });
     expect(res.status).toBe(201);
     expect(res.body.name).toBe('PLA Blue');
+  });
+
+  it('returns 400 when fields are missing', async () => {
+    const res = await request(app)
+      .post('/api/admin/materiais')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'PLA' }); // missing type and price_per_gram
+    expect(res.status).toBe(400);
   });
 });
 
@@ -36,8 +60,8 @@ describe('PUT /api/admin/materiais/:id — cost recalculation', () => {
       .send({ price_per_gram: 0.10 }); // doubled price
 
     const { rows } = await pool.query(`SELECT cost_calculated FROM products WHERE id = $1`, [product.id]);
-    // 100g * 0.10 = 10.00 (no electricity in test settings with 0 print time)
-    expect(parseFloat(rows[0].cost_calculated)).toBeGreaterThan(0);
+    // 100g * 0.10 = 10.00
+    expect(parseFloat(rows[0].cost_calculated)).toBe(10);
   });
 });
 

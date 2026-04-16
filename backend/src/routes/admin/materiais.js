@@ -20,6 +20,9 @@ router.post('/', async (req, res, next) => {
     if (!name || !type || price_per_gram === undefined) {
       return res.status(400).json({ error: 'name, type, and price_per_gram are required' });
     }
+    if (typeof price_per_gram !== 'number' || !Number.isFinite(price_per_gram) || price_per_gram < 0) {
+      return res.status(400).json({ error: 'price_per_gram must be a non-negative finite number' });
+    }
     const { rows } = await pool.query(
       `INSERT INTO materials (name, type, price_per_gram) VALUES ($1, $2, $3) RETURNING *`,
       [name, type, price_per_gram]
@@ -40,6 +43,7 @@ router.put('/:id', async (req, res, next) => {
     );
     if (!rows[0]) return res.status(404).json({ error: 'Material not found' });
 
+    // Only trigger recalculation if price changed — other field updates don't affect cost
     if (price_per_gram !== undefined) {
       await recalculateProductsUsingMaterial(req.params.id);
     }

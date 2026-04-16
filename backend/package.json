@@ -10,11 +10,6 @@
     "dev": "node --watch src/index.js",
     "test": "jest --runInBand"
   },
-  "jest": {
-    "testEnvironment": "node",
-    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
-    "testMatch": ["**/tests/**/*.test.js"]
-  },
   "keywords": [],
   "author": "",
   "license": "ISC",

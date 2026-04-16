@@ -25,5 +25,10 @@
   "devDependencies": {
     "jest": "^30.3.0",
     "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "testMatch": ["**/tests/**/*.test.js"]
   }
 }

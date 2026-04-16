@@ -20,6 +20,10 @@ app.use('/api/admin/pedidos',    require('./routes/admin/pedidos'));
 app.use('/api/carrinho', require('./routes/carrinho'));
 app.use('/api/pedidos', require('./routes/pedidos'));
 
+app.use('/api/admin/dashboard',     require('./routes/admin/dashboard'));
+app.use('/api/admin/configuracoes', require('./routes/admin/configuracoes'));
+app.use('/api/admin/usuarios',      require('./routes/admin/usuarios'));
+
 app.use(errorHandler);
 
 module.exports = app;

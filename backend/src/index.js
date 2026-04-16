@@ -13,6 +13,7 @@ app.use('/api/auth',  require('./routes/auth'));
 app.use('/api',       require('./routes/produtos'));
 
 app.use('/api/admin/categorias', require('./routes/admin/categorias'));
+app.use('/api/admin/materiais',  require('./routes/admin/materiais'));
 
 app.use(errorHandler);
 

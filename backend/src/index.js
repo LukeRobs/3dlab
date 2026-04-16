@@ -15,6 +15,7 @@ app.use('/api',       require('./routes/produtos'));
 app.use('/api/admin/categorias', require('./routes/admin/categorias'));
 app.use('/api/admin/materiais',  require('./routes/admin/materiais'));
 app.use('/api/admin/produtos',   require('./routes/admin/produtos'));
+app.use('/api/admin/pedidos',    require('./routes/admin/pedidos'));
 
 app.use('/api/carrinho', require('./routes/carrinho'));
 app.use('/api/pedidos', require('./routes/pedidos'));

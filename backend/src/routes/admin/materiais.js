@@ -34,6 +34,10 @@ router.post('/', async (req, res, next) => {
 router.put('/:id', async (req, res, next) => {
   try {
     const { name, type, price_per_gram } = req.body;
+    if (price_per_gram !== undefined &&
+        (typeof price_per_gram !== 'number' || !Number.isFinite(price_per_gram) || price_per_gram < 0)) {
+      return res.status(400).json({ error: 'price_per_gram must be a non-negative finite number' });
+    }
     const { rows } = await pool.query(
       `UPDATE materials
        SET name = COALESCE($1, name), type = COALESCE($2, type),

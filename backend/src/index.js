@@ -12,6 +12,8 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth',  require('./routes/auth'));
 app.use('/api',       require('./routes/produtos'));
 
+app.use('/api/admin/categorias', require('./routes/admin/categorias'));
+
 app.use(errorHandler);
 
 module.exports = app;

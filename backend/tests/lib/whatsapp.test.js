@@ -12,6 +12,24 @@ describe('generateMessage', () => {
     expect(msg).toContain('Total: R$ 74.80');
     expect(msg).toContain('Pedido #abcd1234');
   });
+
+  it('handles string prices from DB rows', () => {
+    const items = [{ quantity: 1, product_name: 'Item', unit_price: '19.90' }];
+    const msg = generateMessage(items, '19.90', 'ffffffff-0000-0000-0000-000000000000');
+    expect(msg).toContain('1x Item - R$ 19.90');
+    expect(msg).toContain('Total: R$ 19.90');
+  });
+
+  it('produces valid message with empty items array', () => {
+    const msg = generateMessage([], 0, 'abcd1234-0000-0000-0000-000000000000');
+    expect(msg).toContain('Total: R$ 0.00');
+    expect(msg).toContain('Pedido #abcd1234');
+  });
+
+  it('truncates orderId to 8 characters', () => {
+    const msg = generateMessage([], 0, 'xyz');
+    expect(msg).toContain('Pedido #xyz');
+  });
 });
 
 describe('generateUrl', () => {

@@ -1,4 +1,4 @@
-function calculateCost(printTimeMinutes, productMaterials, settings) {
+function calculateCost(printTimeMinutes, productMaterials = [], settings) {
   const materialCost = productMaterials.reduce((sum, pm) => {
     return sum + parseFloat(pm.quantity_grams) * parseFloat(pm.price_per_gram);
   }, 0);
@@ -8,7 +8,9 @@ function calculateCost(printTimeMinutes, productMaterials, settings) {
   const hours = (printTimeMinutes || 0) / 60;
   const electricityCost = hours * (watts / 1000) * kwh;
 
-  return parseFloat((materialCost + electricityCost).toFixed(4));
+  const total = materialCost + electricityCost;
+  if (!Number.isFinite(total)) return 0;
+  return parseFloat(total.toFixed(4));
 }
 
 module.exports = { calculateCost };

@@ -5,6 +5,12 @@ import { getLocalCart } from '../lib/cart';
 import api from '../lib/api';
 import ThemeToggle from './ThemeToggle';
 
+const ANNOUNCE_MSGS = [
+  { icon: '🚚', html: 'Frete grátis a partir de <strong class="text-[#39ff14]">R$ 300,00</strong>' },
+  { icon: '🎉', html: '5% OFF na primeira compra — Cupom: <strong class="text-[#39ff14]">3DMAX</strong>' },
+  { icon: '💸', html: '10% de desconto pagando no <strong class="text-[#39ff14]">PIX</strong>' },
+];
+
 // Printer SVG icon
 function PrinterIcon() {
   return (
@@ -71,6 +77,13 @@ export default function Navbar() {
   const cartCount = user
     ? dbCartCount
     : getLocalCart().reduce((s, i) => s + i.quantity, 0);
+
+  // Announcement bar rotation
+  const [msgIdx, setMsgIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setMsgIdx(i => (i + 1) % ANNOUNCE_MSGS.length), 4000);
+    return () => clearInterval(t);
+  }, []);
 
   // Mobile drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -195,26 +208,18 @@ export default function Navbar() {
   return (
     <>
       <div className="sticky top-0 z-40">
-        {/* Top benefits bar */}
-        <div className="bg-gray-900 dark:bg-black text-white py-2 px-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-center gap-6 md:gap-16 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-2.5 flex-shrink-0">
-              <span className="w-7 h-7 rounded-full border border-white/30 flex items-center justify-center text-xs">💳</span>
-              <span className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap">
-                Pagamento em até <strong className="text-[#39ff14]">12x</strong>
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5 flex-shrink-0">
-              <span className="w-7 h-7 rounded-full border border-white/30 flex items-center justify-center text-xs">🏆</span>
-              <span className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap">
-                Mais de <strong className="text-[#39ff14]">20 mil</strong> itens colecionáveis
-              </span>
-            </div>
-            <div className="flex items-center gap-2.5 flex-shrink-0">
-              <span className="w-7 h-7 rounded-full border border-white/30 flex items-center justify-center text-xs">🏪</span>
-              <span className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap">
-                <strong className="text-[#39ff14]">Compre online</strong> e retire na loja física
-              </span>
+        {/* Rotating announcement bar */}
+        <div className="bg-gray-900 dark:bg-black text-white py-2 px-4 overflow-hidden">
+          <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[24px]">
+            <div
+              key={msgIdx}
+              className="flex items-center gap-2 animate-fade-in"
+            >
+              <span>{ANNOUNCE_MSGS[msgIdx].icon}</span>
+              <span
+                className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap"
+                dangerouslySetInnerHTML={{ __html: ANNOUNCE_MSGS[msgIdx].html }}
+              />
             </div>
           </div>
         </div>

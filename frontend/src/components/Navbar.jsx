@@ -194,7 +194,32 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 bg-white/90 dark:bg-[#0a0a0a]/90 backdrop-blur-md border-b border-gray-200 dark:border-[#2a2a2a]">
+      <div className="sticky top-0 z-40">
+        {/* Top benefits bar */}
+        <div className="bg-gray-900 dark:bg-black text-white py-2 px-4">
+          <div className="max-w-7xl mx-auto flex items-center justify-center gap-6 md:gap-16 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              <span className="w-7 h-7 rounded-full border border-white/30 flex items-center justify-center text-xs">💳</span>
+              <span className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap">
+                Pagamento em até <strong className="text-[#39ff14]">12x</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              <span className="w-7 h-7 rounded-full border border-white/30 flex items-center justify-center text-xs">🏆</span>
+              <span className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap">
+                Mais de <strong className="text-[#39ff14]">20 mil</strong> itens colecionáveis
+              </span>
+            </div>
+            <div className="flex items-center gap-2.5 flex-shrink-0">
+              <span className="w-7 h-7 rounded-full border border-white/30 flex items-center justify-center text-xs">🏪</span>
+              <span className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap">
+                <strong className="text-[#39ff14]">Compre online</strong> e retire na loja física
+              </span>
+            </div>
+          </div>
+        </div>
+
+      <nav className="bg-white/90 dark:bg-[#0a0a0a]/90 backdrop-blur-md border-b border-gray-200 dark:border-[#2a2a2a]">
         <div className="max-w-7xl mx-auto px-4">
           {/* Desktop row */}
           <div className="hidden md:flex items-center gap-4 h-14">
@@ -388,6 +413,7 @@ export default function Navbar() {
           </div>
         )}
       </nav>
+      </div>
     </>
   );
 }

@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../lib/auth';
 import { getLocalCart, updateLocalCart, removeFromLocalCart } from '../lib/cart';
 import Navbar from '../components/Navbar';
 import CartItem from '../components/CartItem';
+import Footer from '../components/Footer';
 
 export default function Cart() {
   const { user } = useAuth();
@@ -50,8 +51,6 @@ export default function Cart() {
     setLoading(true);
     try {
       const { data } = await api.post('/pedidos');
-      // Backend clears cart_items for this user in the same transaction.
-      // No client-side cart clearing needed — navigating away unmounts this page.
       window.open(data.whatsapp_url, '_blank');
       navigate('/conta/pedidos');
     } catch (err) {
@@ -64,18 +63,23 @@ export default function Cart() {
   const total = items.reduce((sum, i) => sum + parseFloat(i.price || i.unit_price || 0) * i.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex flex-col">
       <Navbar />
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-6">Carrinho</h1>
+      <main className="flex-1 max-w-2xl mx-auto px-4 py-10 w-full">
+        <h1 className="font-display text-3xl text-gray-900 dark:text-gray-100 mb-6">Carrinho</h1>
         {items.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-gray-500 mb-4">Seu carrinho está vazio.</p>
-            <a href="/" className="text-indigo-600 hover:underline">Ver produtos</a>
+          <div className="text-center py-20">
+            <p className="text-gray-500 dark:text-gray-400 mb-6 text-lg">Seu carrinho está vazio</p>
+            <Link
+              to="/"
+              className="inline-block bg-green-600 dark:bg-[#39ff14] text-white dark:text-black font-semibold px-8 py-3 rounded-lg hover:bg-green-700 dark:hover:bg-[#2bcc0f] active:scale-95 transition-all"
+            >
+              Ver Catálogo
+            </Link>
           </div>
         ) : (
           <>
-            <div className="bg-white rounded-lg shadow p-4">
+            <div>
               {items.map(item => (
                 <CartItem
                   key={item.id || item.product_id}
@@ -85,15 +89,15 @@ export default function Cart() {
                 />
               ))}
             </div>
-            <div className="mt-6 bg-white rounded-lg shadow p-4 flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total</p>
-                <p className="text-2xl font-bold">R$ {total.toFixed(2)}</p>
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6 mt-4">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">Subtotal</span>
+                <span className="text-xl font-bold text-gray-900 dark:text-gray-100">R$ {total.toFixed(2)}</span>
               </div>
               <button
                 onClick={handleFinalize}
                 disabled={loading}
-                className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50"
+                className="w-full bg-green-600 dark:bg-[#39ff14] text-white dark:text-black py-4 text-lg font-semibold rounded-lg hover:bg-green-700 dark:hover:bg-[#2bcc0f] active:scale-95 transition-all disabled:opacity-50"
               >
                 {loading ? 'Processando...' : user ? 'Finalizar Compra' : 'Entrar para Finalizar'}
               </button>
@@ -101,6 +105,7 @@ export default function Cart() {
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

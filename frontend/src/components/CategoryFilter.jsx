@@ -1,9 +1,13 @@
 export default function CategoryFilter({ categories, selected, onChange }) {
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide mb-6 pb-1">
       <button
         onClick={() => onChange(null)}
-        className={`px-3 py-1 rounded-full text-sm border ${!selected ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 hover:border-indigo-400'}`}
+        className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${
+          !selected
+            ? 'bg-green-600 dark:bg-[#39ff14] text-white dark:text-black border-transparent'
+            : 'border-gray-300 dark:border-[#2a2a2a] text-gray-600 dark:text-gray-400 hover:border-green-500'
+        }`}
       >
         Todos
       </button>
@@ -11,7 +15,11 @@ export default function CategoryFilter({ categories, selected, onChange }) {
         <button
           key={cat.id}
           onClick={() => onChange(cat.slug)}
-          className={`px-3 py-1 rounded-full text-sm border ${selected === cat.slug ? 'bg-indigo-600 text-white border-indigo-600' : 'border-gray-300 hover:border-indigo-400'}`}
+          className={`flex-shrink-0 rounded-full px-4 py-1.5 text-sm font-medium border transition-colors ${
+            selected === cat.slug
+              ? 'bg-green-600 dark:bg-[#39ff14] text-white dark:text-black border-transparent'
+              : 'border-gray-300 dark:border-[#2a2a2a] text-gray-600 dark:text-gray-400 hover:border-green-500'
+          }`}
         >
           {cat.name}
         </button>

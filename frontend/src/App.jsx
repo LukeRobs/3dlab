@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './lib/auth';
+import { ThemeProvider } from './lib/theme';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -25,34 +26,36 @@ import Configuracoes from './pages/admin/Configuracoes';
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public */}
-          <Route path="/"              element={<Catalog />} />
-          <Route path="/produto/:slug" element={<ProductDetail />} />
-          <Route path="/carrinho"      element={<Cart />} />
-          <Route path="/login"         element={<Login />} />
-          <Route path="/cadastro"      element={<Register />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public */}
+            <Route path="/"              element={<Catalog />} />
+            <Route path="/produto/:slug" element={<ProductDetail />} />
+            <Route path="/carrinho"      element={<Cart />} />
+            <Route path="/login"         element={<Login />} />
+            <Route path="/cadastro"      element={<Register />} />
 
-          {/* Customer */}
-          <Route path="/conta/pedidos" element={
-            <ProtectedRoute><Pedidos /></ProtectedRoute>
-          } />
+            {/* Customer */}
+            <Route path="/conta/pedidos" element={
+              <ProtectedRoute><Pedidos /></ProtectedRoute>
+            } />
 
-          {/* Admin */}
-          <Route path="/admin/dashboard"    element={<AdminRoute><Dashboard /></AdminRoute>} />
-          <Route path="/admin/produtos"     element={<AdminRoute><AdminProdutos /></AdminRoute>} />
-          <Route path="/admin/produtos/novo" element={<AdminRoute><ProdutoForm /></AdminRoute>} />
-          <Route path="/admin/produtos/:id" element={<AdminRoute><ProdutoForm /></AdminRoute>} />
-          <Route path="/admin/materiais"    element={<AdminRoute><Materiais /></AdminRoute>} />
-          <Route path="/admin/materiais/novo" element={<AdminRoute><MaterialForm /></AdminRoute>} />
-          <Route path="/admin/materiais/:id" element={<AdminRoute><MaterialForm /></AdminRoute>} />
-          <Route path="/admin/categorias"   element={<AdminRoute><Categorias /></AdminRoute>} />
-          <Route path="/admin/pedidos"      element={<AdminRoute><AdminPedidos /></AdminRoute>} />
-          <Route path="/admin/configuracoes" element={<AdminRoute><Configuracoes /></AdminRoute>} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+            {/* Admin */}
+            <Route path="/admin/dashboard"    element={<AdminRoute><Dashboard /></AdminRoute>} />
+            <Route path="/admin/produtos"     element={<AdminRoute><AdminProdutos /></AdminRoute>} />
+            <Route path="/admin/produtos/novo" element={<AdminRoute><ProdutoForm /></AdminRoute>} />
+            <Route path="/admin/produtos/:id" element={<AdminRoute><ProdutoForm /></AdminRoute>} />
+            <Route path="/admin/materiais"    element={<AdminRoute><Materiais /></AdminRoute>} />
+            <Route path="/admin/materiais/novo" element={<AdminRoute><MaterialForm /></AdminRoute>} />
+            <Route path="/admin/materiais/:id" element={<AdminRoute><MaterialForm /></AdminRoute>} />
+            <Route path="/admin/categorias"   element={<AdminRoute><Categorias /></AdminRoute>} />
+            <Route path="/admin/pedidos"      element={<AdminRoute><AdminPedidos /></AdminRoute>} />
+            <Route path="/admin/configuracoes" element={<AdminRoute><Configuracoes /></AdminRoute>} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -7,7 +7,11 @@ const { recalculateAllProducts } = require('../../lib/recalculate');
 const router = express.Router();
 router.use(verifyToken, requireRole('admin'));
 
-const VALID_KEYS = ['whatsapp_number', 'electricity_kwh_price', 'printer_power_watts', 'store_name', 'store_description'];
+const VALID_KEYS = [
+  'whatsapp_number', 'electricity_kwh_price', 'printer_power_watts',
+  'store_name', 'store_description',
+  'announce_msg_1', 'announce_msg_2', 'announce_msg_3',
+];
 
 router.get('/', async (req, res, next) => {
   try {

@@ -23,6 +23,7 @@ import MaterialForm  from './pages/admin/MaterialForm';
 import Categorias    from './pages/admin/Categorias';
 import AdminPedidos  from './pages/admin/Pedidos';
 import Configuracoes from './pages/admin/Configuracoes';
+import Vitrine       from './pages/admin/Vitrine';
 
 export default function App() {
   return (
@@ -53,6 +54,7 @@ export default function App() {
             <Route path="/admin/categorias"   element={<AdminRoute><Categorias /></AdminRoute>} />
             <Route path="/admin/pedidos"      element={<AdminRoute><AdminPedidos /></AdminRoute>} />
             <Route path="/admin/configuracoes" element={<AdminRoute><Configuracoes /></AdminRoute>} />
+            <Route path="/admin/vitrine"      element={<AdminRoute><Vitrine /></AdminRoute>} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

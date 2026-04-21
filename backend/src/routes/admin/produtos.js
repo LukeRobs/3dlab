@@ -11,10 +11,29 @@ router.use(verifyToken, requireRole('admin'));
 router.get('/', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT id, name, slug, price, cost_calculated, is_active, views_count, created_at
-       FROM products ORDER BY created_at DESC`
+      `SELECT p.id, p.name, p.slug, p.price, p.cost_calculated, p.is_active, p.views_count, p.created_at,
+              p.section,
+              (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = true LIMIT 1) as primary_image
+       FROM products p ORDER BY p.created_at DESC`
     );
     res.json(rows);
+  } catch (err) { next(err); }
+});
+
+// PATCH /api/admin/produtos/:id/section — update vitrine section
+router.patch('/:id/section', async (req, res, next) => {
+  try {
+    const { section } = req.body; // null | 'lancamentos' | 'prevenda' | 'promocao'
+    const validSections = [null, 'lancamentos', 'prevenda', 'promocao'];
+    if (!validSections.includes(section)) {
+      return res.status(400).json({ error: 'Invalid section' });
+    }
+    const { rows } = await pool.query(
+      `UPDATE products SET section = $1 WHERE id = $2 RETURNING id, name, section`,
+      [section, req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Product not found' });
+    res.json(rows[0]);
   } catch (err) { next(err); }
 });
 

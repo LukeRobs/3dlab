@@ -5,10 +5,10 @@ import { getLocalCart } from '../lib/cart';
 import api from '../lib/api';
 import ThemeToggle from './ThemeToggle';
 
-const ANNOUNCE_MSGS = [
-  { icon: '🚚', html: 'Frete grátis a partir de <strong class="text-[#39ff14]">R$ 300,00</strong>' },
-  { icon: '🎉', html: '5% OFF na primeira compra — Cupom: <strong class="text-[#39ff14]">3DMAX</strong>' },
-  { icon: '💸', html: '10% de desconto pagando no <strong class="text-[#39ff14]">PIX</strong>' },
+const DEFAULT_MSGS = [
+  'Frete grátis a partir de <strong class="text-[#39ff14]">R$ 300,00</strong>',
+  '5% OFF na primeira compra — Cupom: <strong class="text-[#39ff14]">3DMAX</strong>',
+  '10% de desconto pagando no <strong class="text-[#39ff14]">PIX</strong>',
 ];
 
 // Printer SVG icon
@@ -78,12 +78,22 @@ export default function Navbar() {
     ? dbCartCount
     : getLocalCart().reduce((s, i) => s + i.quantity, 0);
 
+  // Announcement bar messages — fetched from API, fallback to defaults
+  const [announceMsgs, setAnnounceMsgs] = useState(DEFAULT_MSGS);
+  useEffect(() => {
+    api.get('/configuracoes').then(r => {
+      const msgs = [r.data.announce_msg_1, r.data.announce_msg_2, r.data.announce_msg_3]
+        .filter(Boolean);
+      if (msgs.length > 0) setAnnounceMsgs(msgs);
+    }).catch(() => {});
+  }, []);
+
   // Announcement bar rotation
   const [msgIdx, setMsgIdx] = useState(0);
   useEffect(() => {
-    const t = setInterval(() => setMsgIdx(i => (i + 1) % ANNOUNCE_MSGS.length), 4000);
+    const t = setInterval(() => setMsgIdx(i => (i + 1) % announceMsgs.length), 4000);
     return () => clearInterval(t);
-  }, []);
+  }, [announceMsgs.length]);
 
   // Mobile drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -215,10 +225,9 @@ export default function Navbar() {
               key={msgIdx}
               className="flex items-center gap-2 animate-fade-in"
             >
-              <span>{ANNOUNCE_MSGS[msgIdx].icon}</span>
               <span
                 className="text-xs font-semibold tracking-wide uppercase whitespace-nowrap"
-                dangerouslySetInnerHTML={{ __html: ANNOUNCE_MSGS[msgIdx].html }}
+                dangerouslySetInnerHTML={{ __html: announceMsgs[msgIdx] || '' }}
               />
             </div>
           </div>

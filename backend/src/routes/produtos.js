@@ -4,6 +4,18 @@ const { pool } = require('../db/client');
 
 const router = express.Router();
 
+// GET /api/configuracoes (public — announce messages + store name)
+router.get('/configuracoes', async (req, res, next) => {
+  try {
+    const PUBLIC_KEYS = ['store_name', 'announce_msg_1', 'announce_msg_2', 'announce_msg_3'];
+    const { rows } = await pool.query(
+      `SELECT key, value FROM settings WHERE key = ANY($1)`,
+      [PUBLIC_KEYS]
+    );
+    res.json(Object.fromEntries(rows.map(r => [r.key, r.value])));
+  } catch (err) { next(err); }
+});
+
 // GET /api/categorias
 router.get('/categorias', async (req, res, next) => {
   try {
@@ -17,7 +29,7 @@ router.get('/produtos', async (req, res, next) => {
   try {
     const { category, search } = req.query;
     let query = `
-      SELECT p.id, p.name, p.slug, p.price, p.views_count, p.is_active,
+      SELECT p.id, p.name, p.slug, p.price, p.views_count, p.is_active, p.section,
              c.name as category_name, c.slug as category_slug,
              (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = true LIMIT 1) as primary_image
       FROM products p

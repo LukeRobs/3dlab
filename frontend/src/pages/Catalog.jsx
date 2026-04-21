@@ -176,10 +176,11 @@ export default function Catalog() {
     setTimeout(() => setToast(null), 2500);
   }, [user]);
 
-  const lancamentos = allProducts.slice(0, Math.min(8, allProducts.length));
-  const prevenda = allProducts.filter(p => norm(p.category_name) === 'prevenda' || norm(p.category_slug) === 'prevenda');
+  // Section-tagged products (set in admin Vitrine)
+  const lancamentos = allProducts.filter(p => p.section === 'lancamentos');
+  const prevenda = allProducts.filter(p => p.section === 'prevenda');
+  const promocao = allProducts.filter(p => p.section === 'promocao');
   const prevendaCategory = categories.find(c => norm(c.name) === 'prevenda' || norm(c.slug) === 'prevenda');
-  const promocao = allProducts.filter(p => norm(p.category_name) === 'promocao' || norm(p.category_slug) === 'promocao');
   const promocaoCategory = categories.find(c => norm(c.name) === 'promocao' || norm(c.slug) === 'promocao');
 
   const filteredProducts = selectedCategory

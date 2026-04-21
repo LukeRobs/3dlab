@@ -121,8 +121,8 @@ export default function HeroCarousel() {
 
   return (
     <div
-      className="relative w-full overflow-hidden bg-black"
-      style={{ height: 'clamp(280px, 40vw, 500px)' }}
+      className="relative w-full overflow-hidden bg-gray-900"
+      style={{ height: 'clamp(320px, 45vw, 560px)' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}
@@ -139,15 +139,15 @@ export default function HeroCarousel() {
             <img
               src={s.primary_image}
               alt={s.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
             />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
           )}
 
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+          {/* Gradient overlay — suave, só para legibilidade do texto */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
           {/* Content */}
           <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10 z-10">

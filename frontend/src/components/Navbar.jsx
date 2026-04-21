@@ -11,18 +11,14 @@ const DEFAULT_MSGS = [
   '10% de desconto pagando no <strong class="text-[#39ff14]">PIX</strong>',
 ];
 
-// Printer SVG icon
-function PrinterIcon() {
+function StoreLogo({ size = 'md' }) {
+  const dim = size === 'sm' ? 'w-7 h-7' : 'w-8 h-8';
   return (
-    <svg
-      className="w-6 h-6 text-green-600 dark:text-[#39ff14]"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      strokeWidth={1.8}
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z" />
-    </svg>
+    <img
+      src="https://cdn.offstoreimages.me/compressed/1b0d85a498156aeea61349f6127ad066.webp"
+      alt="Montenegro 3D Lab"
+      className={`${dim} rounded-md object-contain`}
+    />
   );
 }
 
@@ -239,9 +235,9 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-4 h-14">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 flex-shrink-0 mr-2">
-              <PrinterIcon />
+              <StoreLogo />
               <span className="font-display text-2xl text-gray-900 dark:text-gray-100 leading-none tracking-wide">
-                LOJA GEEK 3D
+                MONTENEGRO 3D LAB
               </span>
             </Link>
 
@@ -315,9 +311,9 @@ export default function Navbar() {
           <div className="flex md:hidden items-center gap-1 h-14">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-1.5 flex-1">
-              <PrinterIcon />
+              <StoreLogo size="sm" />
               <span className="font-display text-xl text-gray-900 dark:text-gray-100 leading-none">
-                LOJA GEEK 3D
+                MONTENEGRO 3D LAB
               </span>
             </Link>
 

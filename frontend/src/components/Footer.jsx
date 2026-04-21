@@ -38,7 +38,7 @@ function PixIcon() {
 
 const BENEFITS = [
   { Icon: CreditCardIcon, text: 'Pagamento em até', highlight: '12X sem juros' },
-  { Icon: TrophyIcon, text: 'Mais de 20 mil', highlight: 'Itens Colecionáveis' },
+  { Icon: TrophyIcon, text: 'Mais de 500', highlight: 'Itens Colecionáveis' },
   { Icon: StoreIcon, text: 'Compre online e', highlight: 'Retire na Loja Física' },
 ];
 
@@ -66,19 +66,37 @@ export default function Footer() {
       {/* Main footer */}
       <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 sm:grid-cols-3 gap-8">
         <div className="sm:col-span-2">
-          <div className="flex items-center gap-2 mb-2">
-            <svg className="w-6 h-6 text-green-500 dark:text-[#39ff14]" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z" />
-            </svg>
-            <h3 className="font-display text-2xl text-white leading-none">LOJA GEEK 3D</h3>
+          <div className="flex items-center gap-2.5 mb-2">
+            <img
+              src="https://cdn.offstoreimages.me/compressed/1b0d85a498156aeea61349f6127ad066.webp"
+              alt="Montenegro 3D Lab"
+              className="w-9 h-9 rounded-lg object-contain"
+            />
+            <h3 className="font-display text-2xl text-white leading-none">MONTENEGRO 3D LAB</h3>
           </div>
           <p className="text-gray-400 text-sm max-w-sm leading-relaxed">
             Impressão 3D de qualidade para colecionadores e entusiastas. Miniaturas, personagens e
             acessórios exclusivos feitos sob encomenda.
           </p>
-          <div className="mt-4 flex items-center gap-2 bg-[#39ff14]/10 border border-[#39ff14]/30 rounded-lg px-4 py-2.5 w-fit">
-            <PixIcon />
-            <span className="text-[#39ff14] text-sm font-semibold">10% de desconto pagando com PIX</span>
+
+          {/* Trust badges */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <div className="flex items-center gap-2 bg-[#39ff14]/10 border border-[#39ff14]/30 rounded-lg px-4 py-2.5">
+              <PixIcon />
+              <span className="text-[#39ff14] text-sm font-semibold">10% de desconto pagando com PIX</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5">
+              <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span className="text-gray-300 text-sm font-medium">Compra segura</span>
+            </div>
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5">
+              <svg className="w-4 h-4 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span className="text-gray-300 text-sm font-medium">Seus dados protegidos</span>
+            </div>
           </div>
         </div>
 
@@ -91,7 +109,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-gray-800 py-4 text-center text-gray-500 text-xs">
-        Feito com cuidado — Loja Geek 3D
+        Desenvolvido por: Lucas R.  - montenegro3dlab
       </div>
     </footer>
   );

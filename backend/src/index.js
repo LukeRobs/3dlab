@@ -1,12 +1,16 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const migrate = require('./db/migrate');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded images
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth',  require('./routes/auth'));
@@ -22,6 +26,7 @@ app.use('/api/pedidos', require('./routes/pedidos'));
 
 app.use('/api/admin/dashboard',     require('./routes/admin/dashboard'));
 app.use('/api/admin/configuracoes', require('./routes/admin/configuracoes'));
+app.use('/api/admin/upload',        require('./routes/admin/upload'));
 app.use('/api/admin/usuarios',      require('./routes/admin/usuarios'));
 
 app.use(errorHandler);

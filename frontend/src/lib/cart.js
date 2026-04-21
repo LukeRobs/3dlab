@@ -1,7 +1,11 @@
 // frontend/src/lib/cart.js
-// localStorage cart for guests. Keys: product_id -> { product_id, quantity, name, price, image }
+// localStorage cart for guests. Supports selected_variants per item.
 
 const CART_KEY = 'cart';
+
+function variantKey(productId, variants) {
+  return `${productId}::${JSON.stringify(variants || {})}`;
+}
 
 export function getLocalCart() {
   try {
@@ -12,28 +16,38 @@ export function getLocalCart() {
   }
 }
 
-export function addToLocalCart(product, quantity = 1) {
+export function addToLocalCart(product, quantity = 1, selectedVariants = {}) {
   const cart = getLocalCart();
-  const existing = cart.find(i => i.product_id === product.id);
+  const key = variantKey(product.id, selectedVariants);
+  const existing = cart.find(i => variantKey(i.product_id, i.selected_variants) === key);
   if (existing) {
     existing.quantity += quantity;
   } else {
-    cart.push({ product_id: product.id, quantity, name: product.name, price: product.price, image: product.primary_image });
+    cart.push({
+      product_id: product.id,
+      quantity,
+      name: product.name,
+      price: product.price,
+      image: product.primary_image,
+      selected_variants: selectedVariants,
+    });
   }
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
   return cart;
 }
 
-export function updateLocalCart(productId, quantity) {
-  const cart = getLocalCart().map(i =>
-    i.product_id === productId ? { ...i, quantity } : i
-  ).filter(i => i.quantity > 0);
+export function updateLocalCart(productId, quantity, selectedVariants = {}) {
+  const key = variantKey(productId, selectedVariants);
+  const cart = getLocalCart()
+    .map(i => variantKey(i.product_id, i.selected_variants) === key ? { ...i, quantity } : i)
+    .filter(i => i.quantity > 0);
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
   return cart;
 }
 
-export function removeFromLocalCart(productId) {
-  const cart = getLocalCart().filter(i => i.product_id !== productId);
+export function removeFromLocalCart(productId, selectedVariants = {}) {
+  const key = variantKey(productId, selectedVariants);
+  const cart = getLocalCart().filter(i => variantKey(i.product_id, i.selected_variants) !== key);
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
   return cart;
 }

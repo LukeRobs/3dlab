@@ -1,6 +1,11 @@
 function generateMessage(orderItems, totalPrice, orderId, paymentMethod = 'full') {
   const lines = orderItems
-    .map(item => `- ${item.quantity}x ${item.product_name} - R$ ${parseFloat(item.unit_price).toFixed(2)}`)
+    .map(item => {
+      const variantStr = item.selected_variants && Object.keys(item.selected_variants).length > 0
+        ? ' [' + Object.entries(item.selected_variants).map(([k, v]) => `${k}: ${v}`).join(', ') + ']'
+        : '';
+      return `- ${item.quantity}x ${item.product_name}${variantStr} - R$ ${parseFloat(item.unit_price).toFixed(2)}`;
+    })
     .join('\n');
   const shortId = String(orderId).substring(0, 8);
 

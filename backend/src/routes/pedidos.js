@@ -18,7 +18,7 @@ router.post('/', async (req, res, next) => {
 
     // Get cart items with product info
     const { rows: cartItems } = await client.query(
-      `SELECT ci.product_id, ci.quantity, p.name as product_name, p.price
+      `SELECT ci.product_id, ci.quantity, ci.selected_variants, p.name as product_name, p.price
        FROM cart_items ci JOIN products p ON p.id = ci.product_id
        WHERE ci.user_id = $1`,
       [req.user.id]
@@ -54,7 +54,8 @@ router.post('/', async (req, res, next) => {
     const orderItemsForMsg = cartItems.map(i => ({
       quantity: i.quantity,
       product_name: i.product_name,
-      unit_price: i.price
+      unit_price: i.price,
+      selected_variants: i.selected_variants || {},
     }));
     const message = generateMessage(orderItemsForMsg, totalPrice, order.id, payment_method);
     const whatsappUrl = generateUrl(settingsMap.whatsapp_number, message);

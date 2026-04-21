@@ -212,4 +212,107 @@ router.delete('/:id/images/:imgId', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// ──────────────────────────────────────────
+// Variants
+// ──────────────────────────────────────────
+
+// GET /api/admin/produtos/:id/variants
+router.get('/:id/variants', async (req, res, next) => {
+  try {
+    const { rows: groups } = await pool.query(
+      `SELECT id, name, sort_order FROM product_variant_groups
+       WHERE product_id = $1 ORDER BY sort_order ASC, created_at ASC`,
+      [req.params.id]
+    );
+    for (const g of groups) {
+      const { rows: opts } = await pool.query(
+        `SELECT id, name, price_modifier, is_available, sort_order
+         FROM product_variant_options WHERE group_id = $1 ORDER BY sort_order ASC, created_at ASC`,
+        [g.id]
+      );
+      g.options = opts;
+    }
+    res.json(groups);
+  } catch (err) { next(err); }
+});
+
+// POST /api/admin/produtos/:id/variants — create group
+router.post('/:id/variants', async (req, res, next) => {
+  try {
+    const { name, sort_order = 0 } = req.body;
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const { rows } = await pool.query(
+      `INSERT INTO product_variant_groups (product_id, name, sort_order) VALUES ($1,$2,$3) RETURNING *`,
+      [req.params.id, name, sort_order]
+    );
+    res.status(201).json({ ...rows[0], options: [] });
+  } catch (err) { next(err); }
+});
+
+// PUT /api/admin/produtos/:id/variants/:groupId — rename group
+router.put('/:id/variants/:groupId', async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE product_variant_groups SET name=$1 WHERE id=$2 AND product_id=$3 RETURNING *`,
+      [name, req.params.groupId, req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Group not found' });
+    res.json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/admin/produtos/:id/variants/:groupId
+router.delete('/:id/variants/:groupId', async (req, res, next) => {
+  try {
+    await pool.query(
+      `DELETE FROM product_variant_groups WHERE id=$1 AND product_id=$2`,
+      [req.params.groupId, req.params.id]
+    );
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
+// POST /api/admin/produtos/:id/variants/:groupId/options
+router.post('/:id/variants/:groupId/options', async (req, res, next) => {
+  try {
+    const { name, price_modifier = 0, sort_order = 0 } = req.body;
+    if (!name) return res.status(400).json({ error: 'name required' });
+    const { rows } = await pool.query(
+      `INSERT INTO product_variant_options (group_id, name, price_modifier, sort_order)
+       VALUES ($1,$2,$3,$4) RETURNING *`,
+      [req.params.groupId, name, price_modifier, sort_order]
+    );
+    res.status(201).json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+// PUT /api/admin/produtos/:id/variants/:groupId/options/:optId
+router.put('/:id/variants/:groupId/options/:optId', async (req, res, next) => {
+  try {
+    const { name, price_modifier, is_available } = req.body;
+    const { rows } = await pool.query(
+      `UPDATE product_variant_options SET
+         name = COALESCE($1, name),
+         price_modifier = COALESCE($2, price_modifier),
+         is_available = COALESCE($3, is_available)
+       WHERE id=$4 AND group_id=$5 RETURNING *`,
+      [name, price_modifier, is_available, req.params.optId, req.params.groupId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Option not found' });
+    res.json(rows[0]);
+  } catch (err) { next(err); }
+});
+
+// DELETE /api/admin/produtos/:id/variants/:groupId/options/:optId
+router.delete('/:id/variants/:groupId/options/:optId', async (req, res, next) => {
+  try {
+    await pool.query(
+      `DELETE FROM product_variant_options WHERE id=$1 AND group_id=$2`,
+      [req.params.optId, req.params.groupId]
+    );
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

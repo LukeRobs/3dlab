@@ -69,11 +69,13 @@ export default function ProductDetail() {
   const [toast, setToast] = useState(null);
   const [selectedImage, setSelectedImage] = useState(null);
   const [adding, setAdding] = useState(false);
+  const [selectedVariants, setSelectedVariants] = useState({}); // { groupName: optionName }
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     setProduct(null);
+    setSelectedVariants({});
     api.get(`/produtos/${slug}`).then(r => {
       setProduct(r.data);
       setSelectedImage(null);
@@ -81,13 +83,33 @@ export default function ProductDetail() {
     api.post(`/produtos/${slug}/view`).catch(() => {});
   }, [slug]);
 
+  // All variant groups must have a selection before adding to cart
+  const variantGroups = product?.variant_groups || [];
+  const allVariantsSelected = variantGroups.every(g => selectedVariants[g.name]);
+
+  function handleSelectVariant(groupName, optionName) {
+    setSelectedVariants(prev => ({ ...prev, [groupName]: optionName }));
+  }
+
+  // Compute effective price including any price_modifier from selected options
+  function getEffectivePrice() {
+    if (!product) return 0;
+    let price = parseFloat(product.price);
+    for (const group of variantGroups) {
+      const selectedOpt = group.options?.find(o => o.name === selectedVariants[group.name]);
+      if (selectedOpt) price += parseFloat(selectedOpt.price_modifier || 0);
+    }
+    return price;
+  }
+
   async function handleAddToCart() {
+    if (variantGroups.length > 0 && !allVariantsSelected) return;
     setAdding(true);
     try {
       if (user) {
-        await api.post('/carrinho', { product_id: product.id, quantity });
+        await api.post('/carrinho', { product_id: product.id, quantity, selected_variants: selectedVariants });
       } else {
-        addToLocalCart(product, quantity);
+        addToLocalCart(product, quantity, selectedVariants);
       }
       setToast('Adicionado ao carrinho!');
       setTimeout(() => setToast(null), 2500);
@@ -183,7 +205,7 @@ export default function ProductDetail() {
             {/* Price */}
             <div className="mb-4">
               <p className="text-3xl text-green-600 dark:text-[#39ff14] font-bold leading-none">
-                R$ {parseFloat(product.price).toFixed(2)}
+                R$ {getEffectivePrice().toFixed(2)}
               </p>
               <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">
                 Em até 12x sem juros no cartão
@@ -192,8 +214,48 @@ export default function ProductDetail() {
 
             {/* PIX callout */}
             <div className="mb-5">
-              <PixBadge price={product.price} />
+              <PixBadge price={getEffectivePrice()} />
             </div>
+
+            {/* Variant selectors */}
+            {variantGroups.length > 0 && (
+              <div className="space-y-4 mb-5 border-t border-gray-100 dark:border-[#1a1a1a] pt-5">
+                {variantGroups.map(group => (
+                  <div key={group.id}>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">
+                      {group.name}
+                      {!selectedVariants[group.name] && (
+                        <span className="ml-1.5 text-red-400 font-normal normal-case">— selecione uma opção</span>
+                      )}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {group.options?.filter(o => o.is_available).map(opt => {
+                        const isSelected = selectedVariants[group.name] === opt.name;
+                        const modifier = parseFloat(opt.price_modifier || 0);
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => handleSelectVariant(group.name, opt.name)}
+                            className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all active:scale-95 ${
+                              isSelected
+                                ? 'border-green-600 dark:border-[#39ff14] bg-green-600 dark:bg-[#39ff14] text-white dark:text-black shadow-md shadow-green-600/20 dark:shadow-[#39ff14]/15'
+                                : 'border-gray-200 dark:border-[#2a2a2a] text-gray-700 dark:text-gray-300 hover:border-green-400 dark:hover:border-[#39ff14]/50 hover:bg-gray-50 dark:hover:bg-[#1a1a1a]'
+                            }`}
+                          >
+                            {opt.name}
+                            {modifier !== 0 && (
+                              <span className={`ml-1.5 text-xs ${isSelected ? 'opacity-80' : 'text-green-600 dark:text-[#39ff14]'}`}>
+                                {modifier > 0 ? `+R$${modifier.toFixed(2)}` : `-R$${Math.abs(modifier).toFixed(2)}`}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Description */}
             {product.description && (
@@ -229,9 +291,9 @@ export default function ProductDetail() {
             {/* Add to cart */}
             <button
               onClick={handleAddToCart}
-              disabled={adding}
+              disabled={adding || (variantGroups.length > 0 && !allVariantsSelected)}
               aria-label={`Adicionar ${quantity} unidade${quantity > 1 ? 's' : ''} de ${product.name} ao carrinho`}
-              className="w-full bg-green-600 dark:bg-[#39ff14] text-white dark:text-black py-4 text-base font-semibold rounded-xl hover:bg-green-700 dark:hover:bg-[#2bcc0f] active:scale-95 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg shadow-green-600/20 dark:shadow-[#39ff14]/10"
+              className="w-full bg-green-600 dark:bg-[#39ff14] text-white dark:text-black py-4 text-base font-semibold rounded-xl hover:bg-green-700 dark:hover:bg-[#2bcc0f] active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg shadow-green-600/20 dark:shadow-[#39ff14]/10"
             >
               {adding ? (
                 <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -241,7 +303,11 @@ export default function ProductDetail() {
               ) : (
                 <CartIcon />
               )}
-              {adding ? 'Adicionando...' : 'Adicionar ao Carrinho'}
+              {adding
+                ? 'Adicionando...'
+                : variantGroups.length > 0 && !allVariantsSelected
+                ? 'Selecione as opções acima'
+                : 'Adicionar ao Carrinho'}
             </button>
           </div>
         </div>

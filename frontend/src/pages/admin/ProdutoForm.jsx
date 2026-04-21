@@ -40,11 +40,16 @@ export default function ProdutoForm() {
   const [productMaterials, setProductMaterials] = useState([]);
   const [images, setImages] = useState([]);
   const [newImageUrl, setNewImageUrl] = useState('');
-  const [imagePreview, setImagePreview] = useState(null); // for file pick preview
+  const [imagePreview, setImagePreview] = useState(null);
   const [uploadFile, setUploadFile] = useState(null);
   const [newMat, setNewMat] = useState({ material_id: '', quantity_grams: '' });
   const [error, setError] = useState(null);
   const [savingImage, setSavingImage] = useState(false);
+
+  // Variants state
+  const [variantGroups, setVariantGroups] = useState([]);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [newOptions, setNewOptions] = useState({}); // { groupId: { name, price_modifier } }
 
   useEffect(() => {
     api.get('/categorias').then(r => setCategories(r.data));
@@ -60,6 +65,7 @@ export default function ProdutoForm() {
         setImages(p.images || []);
         setProductMaterials(p.product_materials || []);
       });
+      api.get(`/admin/produtos/${id}/variants`).then(r => setVariantGroups(r.data));
     }
   }, [id, isEdit]);
 
@@ -167,6 +173,50 @@ export default function ProdutoForm() {
   async function handleRemoveImage(imgId) {
     await api.delete(`/admin/produtos/${id}/images/${imgId}`);
     setImages(prev => prev.filter(i => i.id !== imgId));
+  }
+
+  // ---------- Variants ----------
+  async function handleAddGroup() {
+    if (!newGroupName.trim() || !id) return;
+    const { data } = await api.post(`/admin/produtos/${id}/variants`, { name: newGroupName.trim() });
+    setVariantGroups(prev => [...prev, data]);
+    setNewGroupName('');
+  }
+
+  async function handleDeleteGroup(groupId) {
+    await api.delete(`/admin/produtos/${id}/variants/${groupId}`);
+    setVariantGroups(prev => prev.filter(g => g.id !== groupId));
+  }
+
+  async function handleAddOption(groupId) {
+    const opt = newOptions[groupId] || {};
+    if (!opt.name?.trim()) return;
+    const { data } = await api.post(`/admin/produtos/${id}/variants/${groupId}/options`, {
+      name: opt.name.trim(),
+      price_modifier: parseFloat(opt.price_modifier || 0),
+    });
+    setVariantGroups(prev => prev.map(g =>
+      g.id === groupId ? { ...g, options: [...(g.options || []), data] } : g
+    ));
+    setNewOptions(prev => ({ ...prev, [groupId]: { name: '', price_modifier: '' } }));
+  }
+
+  async function handleDeleteOption(groupId, optId) {
+    await api.delete(`/admin/produtos/${id}/variants/${groupId}/options/${optId}`);
+    setVariantGroups(prev => prev.map(g =>
+      g.id === groupId ? { ...g, options: g.options.filter(o => o.id !== optId) } : g
+    ));
+  }
+
+  async function handleToggleOption(groupId, opt) {
+    await api.put(`/admin/produtos/${id}/variants/${groupId}/options/${opt.id}`, {
+      is_available: !opt.is_available,
+    });
+    setVariantGroups(prev => prev.map(g =>
+      g.id === groupId
+        ? { ...g, options: g.options.map(o => o.id === opt.id ? { ...o, is_available: !o.is_available } : o) }
+        : g
+    ));
   }
 
   // Calculate cost from materials
@@ -394,6 +444,130 @@ export default function ProdutoForm() {
                   className="bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 dark:hover:bg-[#2bcc0f] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   Adicionar
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ── Variants ── */}
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-6">
+          <SectionTitle>Variações do Produto</SectionTitle>
+
+          {!isEdit ? (
+            <NewHint>Salve o produto primeiro para adicionar variações.</NewHint>
+          ) : (
+            <>
+              {variantGroups.length === 0 && (
+                <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">
+                  Nenhuma variação cadastrada. Ex: "Cor", "Tamanho", "Modelo".
+                </p>
+              )}
+
+              {/* Existing groups */}
+              <div className="space-y-4 mb-4">
+                {variantGroups.map(group => (
+                  <div key={group.id} className="rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-4">
+                    {/* Group header */}
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 uppercase tracking-wide">
+                        {group.name}
+                      </p>
+                      <button
+                        onClick={() => handleDeleteGroup(group.id)}
+                        className="text-xs text-red-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
+                        Remover grupo
+                      </button>
+                    </div>
+
+                    {/* Options pills */}
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {(group.options || []).map(opt => (
+                        <div
+                          key={opt.id}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                            opt.is_available
+                              ? 'border-green-200 dark:border-[#39ff14]/30 bg-green-50 dark:bg-[#39ff14]/10 text-green-800 dark:text-[#39ff14]'
+                              : 'border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] text-gray-400 line-through'
+                          }`}
+                        >
+                          <span className="font-medium">{opt.name}</span>
+                          {parseFloat(opt.price_modifier || 0) !== 0 && (
+                            <span className="text-xs opacity-70">
+                              {parseFloat(opt.price_modifier) > 0 ? '+' : ''}R${parseFloat(opt.price_modifier).toFixed(2)}
+                            </span>
+                          )}
+                          <button
+                            onClick={() => handleToggleOption(group.id, opt)}
+                            title={opt.is_available ? 'Desativar' : 'Ativar'}
+                            className="opacity-60 hover:opacity-100 transition-opacity ml-0.5"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              {opt.is_available
+                                ? <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                : <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              }
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteOption(group.id, opt.id)}
+                            className="opacity-60 hover:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Add option */}
+                    <div className="flex gap-2 mt-2">
+                      <input
+                        type="text"
+                        placeholder="Nome da opção (ex: Vermelho)"
+                        value={newOptions[group.id]?.name || ''}
+                        onChange={e => setNewOptions(p => ({ ...p, [group.id]: { ...p[group.id], name: e.target.value } }))}
+                        onKeyDown={e => e.key === 'Enter' && handleAddOption(group.id)}
+                        className="flex-1 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                      <input
+                        type="number"
+                        placeholder="+R$"
+                        step="0.01"
+                        value={newOptions[group.id]?.price_modifier || ''}
+                        onChange={e => setNewOptions(p => ({ ...p, [group.id]: { ...p[group.id], price_modifier: e.target.value } }))}
+                        className="w-20 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
+                      />
+                      <button
+                        onClick={() => handleAddOption(group.id)}
+                        disabled={!newOptions[group.id]?.name?.trim()}
+                        className="bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 dark:hover:bg-[#2bcc0f] transition-all disabled:opacity-40"
+                      >
+                        + Opção
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add new group */}
+              <div className="flex gap-2 border-t border-gray-100 dark:border-[#2a2a2a] pt-4">
+                <input
+                  type="text"
+                  placeholder="Nome do grupo (ex: Cor, Tamanho, Modelo)"
+                  value={newGroupName}
+                  onChange={e => setNewGroupName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddGroup()}
+                  className="flex-1 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] px-3 py-2 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <button
+                  onClick={handleAddGroup}
+                  disabled={!newGroupName.trim()}
+                  className="bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 dark:hover:bg-[#2bcc0f] transition-all disabled:opacity-40"
+                >
+                  + Grupo
                 </button>
               </div>
             </>

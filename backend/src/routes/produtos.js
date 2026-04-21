@@ -82,7 +82,23 @@ router.get('/produtos/:slug', async (req, res, next) => {
       [product.id]
     );
 
-    res.json({ ...product, images, product_materials: materials });
+    // Variant groups + options
+    const { rows: variantGroups } = await pool.query(
+      `SELECT id, name, sort_order FROM product_variant_groups
+       WHERE product_id = $1 ORDER BY sort_order ASC, created_at ASC`,
+      [product.id]
+    );
+    for (const group of variantGroups) {
+      const { rows: options } = await pool.query(
+        `SELECT id, name, price_modifier, is_available, sort_order
+         FROM product_variant_options WHERE group_id = $1
+         ORDER BY sort_order ASC, created_at ASC`,
+        [group.id]
+      );
+      group.options = options;
+    }
+
+    res.json({ ...product, images, product_materials: materials, variant_groups: variantGroups });
   } catch (err) { next(err); }
 });
 

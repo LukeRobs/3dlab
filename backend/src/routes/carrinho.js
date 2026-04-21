@@ -9,7 +9,7 @@ router.use(verifyToken);
 router.get('/', async (req, res, next) => {
   try {
     const { rows } = await pool.query(
-      `SELECT ci.id, ci.product_id, ci.quantity,
+      `SELECT ci.id, ci.product_id, ci.quantity, ci.selected_variants,
               p.name as product_name, p.price, p.slug,
               (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = true LIMIT 1) as image
        FROM cart_items ci JOIN products p ON p.id = ci.product_id
@@ -24,13 +24,25 @@ router.post('/merge', async (req, res, next) => {
   try {
     const { items } = req.body;
     if (!Array.isArray(items)) return res.status(400).json({ error: 'items must be an array' });
-
     for (const item of items) {
-      await pool.query(
-        `INSERT INTO cart_items (user_id, product_id, quantity) VALUES ($1, $2, $3)
-         ON CONFLICT (user_id, product_id) DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity`,
-        [req.user.id, item.product_id, item.quantity]
+      const variants = item.selected_variants || {};
+      // Check for existing item with same product + variants
+      const { rows: existing } = await pool.query(
+        `SELECT id, quantity FROM cart_items
+         WHERE user_id=$1 AND product_id=$2 AND selected_variants=$3::jsonb`,
+        [req.user.id, item.product_id, JSON.stringify(variants)]
       );
+      if (existing.length > 0) {
+        await pool.query(
+          `UPDATE cart_items SET quantity = quantity + $1 WHERE id = $2`,
+          [item.quantity, existing[0].id]
+        );
+      } else {
+        await pool.query(
+          `INSERT INTO cart_items (user_id, product_id, quantity, selected_variants) VALUES ($1,$2,$3,$4::jsonb)`,
+          [req.user.id, item.product_id, item.quantity, JSON.stringify(variants)]
+        );
+      }
     }
     res.json({ ok: true });
   } catch (err) { next(err); }
@@ -38,15 +50,33 @@ router.post('/merge', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { product_id, quantity = 1 } = req.body;
+    const { product_id, quantity = 1, selected_variants = {} } = req.body;
     if (!product_id) return res.status(400).json({ error: 'product_id required' });
-    const { rows } = await pool.query(
-      `INSERT INTO cart_items (user_id, product_id, quantity) VALUES ($1, $2, $3)
-       ON CONFLICT (user_id, product_id) DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
-       RETURNING *`,
-      [req.user.id, product_id, quantity]
+
+    const variantsJson = JSON.stringify(selected_variants);
+    // Check for existing item with same product + same variants
+    const { rows: existing } = await pool.query(
+      `SELECT id FROM cart_items
+       WHERE user_id=$1 AND product_id=$2 AND selected_variants=$3::jsonb`,
+      [req.user.id, product_id, variantsJson]
     );
-    res.status(201).json(rows[0]);
+
+    let result;
+    if (existing.length > 0) {
+      const { rows } = await pool.query(
+        `UPDATE cart_items SET quantity = quantity + $1 WHERE id = $2 RETURNING *`,
+        [quantity, existing[0].id]
+      );
+      result = rows[0];
+    } else {
+      const { rows } = await pool.query(
+        `INSERT INTO cart_items (user_id, product_id, quantity, selected_variants)
+         VALUES ($1,$2,$3,$4::jsonb) RETURNING *`,
+        [req.user.id, product_id, quantity, variantsJson]
+      );
+      result = rows[0];
+    }
+    res.status(201).json(result);
   } catch (err) { next(err); }
 });
 

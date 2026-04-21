@@ -31,6 +31,16 @@ export default function CartItem({ item, onQuantityChange, onRemove }) {
         <p className="font-medium text-sm text-gray-900 dark:text-gray-100 line-clamp-2 leading-snug">
           {item.name || item.product_name}
         </p>
+        {/* Selected variants */}
+        {item.selected_variants && Object.keys(item.selected_variants).length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1">
+            {Object.entries(item.selected_variants).map(([k, v]) => (
+              <span key={k} className="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 dark:bg-[#2a2a2a] text-gray-500 dark:text-gray-400 font-medium">
+                {k}: {v}
+              </span>
+            ))}
+          </div>
+        )}
         <p className="text-green-600 dark:text-[#39ff14] font-bold text-sm mt-0.5">
           R$ {parseFloat(item.price || item.unit_price || 0).toFixed(2)}
         </p>

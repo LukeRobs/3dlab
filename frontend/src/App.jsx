@@ -24,6 +24,7 @@ import Categorias    from './pages/admin/Categorias';
 import AdminPedidos  from './pages/admin/Pedidos';
 import Configuracoes from './pages/admin/Configuracoes';
 import Vitrine       from './pages/admin/Vitrine';
+import Banners       from './pages/admin/Banners';
 
 export default function App() {
   return (
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="/admin/pedidos"      element={<AdminRoute><AdminPedidos /></AdminRoute>} />
             <Route path="/admin/configuracoes" element={<AdminRoute><Configuracoes /></AdminRoute>} />
             <Route path="/admin/vitrine"      element={<AdminRoute><Vitrine /></AdminRoute>} />
+            <Route path="/admin/banners"      element={<AdminRoute><Banners /></AdminRoute>} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

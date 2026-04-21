@@ -27,6 +27,8 @@ app.use('/api/pedidos', require('./routes/pedidos'));
 app.use('/api/admin/dashboard',     require('./routes/admin/dashboard'));
 app.use('/api/admin/configuracoes', require('./routes/admin/configuracoes'));
 app.use('/api/admin/upload',        require('./routes/admin/upload'));
+app.use('/api/admin/banners',       require('./routes/admin/banners'));
+app.use('/api/banners',             require('./routes/banners'));
 app.use('/api/admin/usuarios',      require('./routes/admin/usuarios'));
 
 app.use(errorHandler);

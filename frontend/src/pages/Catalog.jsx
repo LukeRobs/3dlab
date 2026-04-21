@@ -210,7 +210,7 @@ export default function Catalog() {
             />
             <SectionCarousel
               title="Pré-venda"
-              badge="EM BREVE"
+              badge="EXCLUSIVOS"
               badgeBg="bg-amber-500"
               products={prevenda}
               onAddToCart={handleAddToCart}

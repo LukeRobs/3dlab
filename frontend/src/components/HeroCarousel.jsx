@@ -35,15 +35,45 @@ export default function HeroCarousel() {
   const progressStartRef = useRef(null);
 
   useEffect(() => {
-    api.get('/produtos')
+    // Try custom banners first; fall back to top-viewed products
+    api.get('/banners')
       .then(({ data }) => {
-        const sorted = [...data]
-          .sort((a, b) => (b.views_count || 0) - (a.views_count || 0))
-          .slice(0, 5);
-        setSlides(sorted);
+        if (data.length > 0) {
+          // Map banner shape to slide shape
+          setSlides(data.map(b => ({
+            id: b.id,
+            name: b.title || '',
+            price: null,
+            slug: null,
+            primary_image: b.image_url,
+            category_name: b.subtitle || null,
+            button_text: b.button_text || 'Ver Produto',
+            button_link: b.button_link || null,
+            isBanner: true,
+          })));
+          setLoading(false);
+        } else {
+          // Fallback: top-viewed products
+          return api.get('/produtos').then(({ data: products }) => {
+            const sorted = [...products]
+              .sort((a, b) => (b.views_count || 0) - (a.views_count || 0))
+              .slice(0, 5);
+            setSlides(sorted);
+            setLoading(false);
+          });
+        }
       })
-      .catch(() => setSlides([]))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        api.get('/produtos')
+          .then(({ data }) => {
+            const sorted = [...data]
+              .sort((a, b) => (b.views_count || 0) - (a.views_count || 0))
+              .slice(0, 5);
+            setSlides(sorted);
+          })
+          .catch(() => setSlides([]))
+          .finally(() => setLoading(false));
+      });
   }, []);
 
   // Progress animation
@@ -149,41 +179,49 @@ export default function HeroCarousel() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
-          {/* Content */}
-          <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10 z-10">
-            <div className="max-w-7xl mx-auto w-full">
-              {/* Category badge */}
-              {s.category_name && (
-                <span className="inline-block mb-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-600 dark:bg-[#39ff14] text-white dark:text-black">
-                  {s.category_name}
-                </span>
-              )}
+          {/* Content — only shown if there's something to display */}
+          {(s.category_name || s.name || s.price || s.button_link) && (
+            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10 z-10">
+              <div className="max-w-7xl mx-auto w-full">
+                {/* Badge: category (products) or subtitle (banners) */}
+                {s.category_name && (
+                  <span className="inline-block mb-3 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-green-600 dark:bg-[#39ff14] text-white dark:text-black">
+                    {s.category_name}
+                  </span>
+                )}
 
-              {/* Product name */}
-              <h2
-                className="font-display text-white leading-none mb-2 drop-shadow-lg"
-                style={{ fontSize: 'clamp(1.75rem, 5vw, 3.5rem)' }}
-              >
-                {s.name}
-              </h2>
+                {/* Title */}
+                {s.name && (
+                  <h2
+                    className="font-display text-white leading-none mb-2 drop-shadow-lg"
+                    style={{ fontSize: 'clamp(1.75rem, 5vw, 3.5rem)' }}
+                  >
+                    {s.name}
+                  </h2>
+                )}
 
-              {/* Price */}
-              <p className="text-[#39ff14] font-bold mb-5 drop-shadow" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)' }}>
-                {formatPrice(s.price)}
-              </p>
+                {/* Price (products only) */}
+                {s.price && (
+                  <p className="text-[#39ff14] font-bold mb-5 drop-shadow" style={{ fontSize: 'clamp(1.1rem, 2.5vw, 1.75rem)' }}>
+                    {formatPrice(s.price)}
+                  </p>
+                )}
 
-              {/* CTA */}
-              <Link
-                to={`/produto/${s.slug}`}
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm bg-green-600 dark:bg-[#39ff14] text-white dark:text-black hover:bg-green-700 dark:hover:bg-[#2bcc0f] active:scale-95 transition-all shadow-lg"
-              >
-                Ver Produto
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
-              </Link>
+                {/* CTA */}
+                {(s.button_link || s.slug) && (
+                  <Link
+                    to={s.button_link || `/produto/${s.slug}`}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm bg-green-600 dark:bg-[#39ff14] text-white dark:text-black hover:bg-green-700 dark:hover:bg-[#2bcc0f] active:scale-95 transition-all shadow-lg"
+                  >
+                    {s.button_text || 'Ver Produto'}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ))}
 

@@ -129,13 +129,13 @@ export default function HeroCarousel() {
 
   if (loading) {
     return (
-      <div className="w-full bg-gray-100 dark:bg-[#111111] animate-pulse" style={{ height: 'clamp(280px, 40vw, 500px)' }} />
+      <div className="w-full bg-gray-100 dark:bg-[#111111] animate-pulse" style={{ aspectRatio: '4/1', minHeight: '160px' }} />
     );
   }
 
   if (slides.length === 0) {
     return (
-      <div className="w-full flex items-center justify-center bg-gray-100 dark:bg-[#111111]" style={{ height: 'clamp(280px, 40vw, 500px)' }}>
+      <div className="w-full flex items-center justify-center bg-gray-100 dark:bg-[#111111]" style={{ aspectRatio: '4/1', minHeight: '160px' }}>
         <div className="text-center">
           <svg className="w-12 h-12 mx-auto mb-3 opacity-20 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 9V3h12v6M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v7H6v-7z" />
@@ -151,8 +151,8 @@ export default function HeroCarousel() {
 
   return (
     <div
-      className="relative w-full overflow-hidden bg-gray-900"
-      style={{ height: 'clamp(320px, 45vw, 560px)' }}
+      className="relative w-full overflow-hidden bg-black"
+      style={{ aspectRatio: '4/1', minHeight: '160px' }}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
       onTouchStart={() => setPaused(true)}

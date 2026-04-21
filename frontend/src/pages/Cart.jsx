@@ -23,10 +23,29 @@ function WhatsAppIcon() {
   );
 }
 
+function PixIcon() {
+  return (
+    <svg viewBox="0 0 100 100" className="w-5 h-5 flex-shrink-0" fill="none">
+      <path d="M50 5L95 50L50 95L5 50Z" fill="currentColor" fillOpacity="0.25" stroke="currentColor" strokeWidth="5" />
+      <path d="M50 28L72 50L50 72L28 50Z" fill="currentColor" />
+    </svg>
+  );
+}
+
+function CardIcon() {
+  return (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+      <rect x="2" y="5" width="20" height="14" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2 10h20" />
+    </svg>
+  );
+}
+
 export default function Cart() {
   const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('pix'); // 'pix' | 'full'
   const navigate = useNavigate();
 
   const loadCart = useCallback(async () => {
@@ -66,7 +85,7 @@ export default function Cart() {
     }
     setLoading(true);
     try {
-      const { data } = await api.post('/pedidos');
+      const { data } = await api.post('/pedidos', { payment_method: paymentMethod });
       window.open(data.whatsapp_url, '_blank');
       navigate('/conta/pedidos');
     } catch (err) {
@@ -77,7 +96,9 @@ export default function Cart() {
   }
 
   const subtotal = items.reduce((sum, i) => sum + parseFloat(i.price || i.unit_price || 0) * i.quantity, 0);
-  const pixTotal = subtotal * 0.9;
+  const discount = paymentMethod === 'pix' ? subtotal * 0.1 : 0;
+  const finalTotal = subtotal - discount;
+  const itemCount = items.reduce((s, i) => s + i.quantity, 0);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex flex-col">
@@ -114,30 +135,102 @@ export default function Cart() {
 
             {/* Order summary */}
             <div className="bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-[#2a2a2a] p-6 mt-4">
-              <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 text-base">Resumo do Pedido</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100 mb-5 text-base">Resumo do Pedido</h2>
 
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">
-                    Subtotal ({items.reduce((s, i) => s + i.quantity, 0)} {items.reduce((s, i) => s + i.quantity, 0) === 1 ? 'item' : 'itens'})
-                  </span>
-                  <span className="font-semibold text-gray-900 dark:text-gray-100">
-                    R$ {subtotal.toFixed(2)}
-                  </span>
+              {/* Subtotal row */}
+              <div className="flex items-center justify-between mb-5">
+                <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  Subtotal ({itemCount} {itemCount === 1 ? 'item' : 'itens'})
+                </span>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                  R$ {subtotal.toFixed(2)}
+                </span>
+              </div>
+
+              {/* Payment method selector */}
+              <div className="mb-5">
+                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+                  Forma de Pagamento
+                </p>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {/* PIX option */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('pix')}
+                    className={`relative flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-4 transition-all ${
+                      paymentMethod === 'pix'
+                        ? 'border-[#39ff14] bg-[#39ff14]/8 dark:bg-[#39ff14]/10'
+                        : 'border-gray-200 dark:border-[#2a2a2a] hover:border-gray-300 dark:hover:border-[#3a3a3a]'
+                    }`}
+                  >
+                    {paymentMethod === 'pix' && (
+                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-[#39ff14] flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
+                    )}
+                    <span className={`${paymentMethod === 'pix' ? 'text-[#39ff14]' : 'text-gray-400 dark:text-gray-500'}`}>
+                      <PixIcon />
+                    </span>
+                    <div className="text-center">
+                      <p className={`text-sm font-semibold ${paymentMethod === 'pix' ? 'text-[#39ff14]' : 'text-gray-700 dark:text-gray-300'}`}>
+                        PIX
+                      </p>
+                      <p className={`text-[11px] font-bold mt-0.5 ${paymentMethod === 'pix' ? 'text-[#39ff14]' : 'text-green-600 dark:text-green-400'}`}>
+                        10% OFF
+                      </p>
+                    </div>
+                  </button>
+
+                  {/* Cartão / Dinheiro option */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('full')}
+                    className={`relative flex flex-col items-center gap-2 rounded-xl border-2 px-3 py-4 transition-all ${
+                      paymentMethod === 'full'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/15'
+                        : 'border-gray-200 dark:border-[#2a2a2a] hover:border-gray-300 dark:hover:border-[#3a3a3a]'
+                    }`}
+                  >
+                    {paymentMethod === 'full' && (
+                      <span className="absolute top-2 right-2 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </span>
+                    )}
+                    <span className={`${paymentMethod === 'full' ? 'text-blue-500' : 'text-gray-400 dark:text-gray-500'}`}>
+                      <CardIcon />
+                    </span>
+                    <div className="text-center">
+                      <p className={`text-sm font-semibold ${paymentMethod === 'full' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'}`}>
+                        Cartão / Dinheiro
+                      </p>
+                      <p className={`text-[11px] mt-0.5 ${paymentMethod === 'full' ? 'text-blue-500 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                        Preço cheio
+                      </p>
+                    </div>
+                  </button>
                 </div>
               </div>
 
-              {/* PIX discount highlight */}
-              <div className="flex items-center justify-between bg-[#39ff14]/10 border border-[#39ff14]/25 rounded-xl px-4 py-3 mb-5">
-                <div className="flex items-center gap-2">
-                  <svg viewBox="0 0 100 100" className="w-5 h-5 flex-shrink-0" fill="none">
-                    <path d="M50 5L95 50L50 95L5 50Z" fill="#39ff14" fillOpacity="0.3" stroke="#39ff14" strokeWidth="4" />
-                    <path d="M50 30L70 50L50 70L30 50Z" fill="#39ff14" />
-                  </svg>
-                  <span className="text-[#39ff14] text-sm font-semibold">No PIX (10% OFF)</span>
+              {/* Divider */}
+              <div className="h-px bg-gray-100 dark:bg-[#2a2a2a] mb-4" />
+
+              {/* Discount row (only PIX) */}
+              {paymentMethod === 'pix' && (
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm text-[#39ff14] font-medium">Desconto PIX (10%)</span>
+                  <span className="text-sm text-[#39ff14] font-semibold">-R$ {discount.toFixed(2)}</span>
                 </div>
-                <span className="text-[#39ff14] font-bold text-base">
-                  R$ {pixTotal.toFixed(2)}
+              )}
+
+              {/* Total row */}
+              <div className="flex items-center justify-between mb-5">
+                <span className="text-base font-bold text-gray-900 dark:text-gray-100">Total</span>
+                <span className={`text-2xl font-display leading-none ${paymentMethod === 'pix' ? 'text-[#39ff14]' : 'text-gray-900 dark:text-gray-100'}`}>
+                  R$ {finalTotal.toFixed(2)}
                 </span>
               </div>
 

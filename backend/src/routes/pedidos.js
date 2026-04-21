@@ -10,6 +10,10 @@ router.use(verifyToken);
 router.post('/', async (req, res, next) => {
   const client = await pool.connect();
   try {
+    const { payment_method = 'full' } = req.body;
+    if (!['pix', 'full'].includes(payment_method)) {
+      return res.status(400).json({ error: 'Invalid payment_method' });
+    }
     await client.query('BEGIN');
 
     // Get cart items with product info
@@ -28,8 +32,8 @@ router.post('/', async (req, res, next) => {
 
     // Create order
     const { rows: [order] } = await client.query(
-      `INSERT INTO orders (user_id, total_price) VALUES ($1, $2) RETURNING *`,
-      [req.user.id, totalPrice.toFixed(2)]
+      `INSERT INTO orders (user_id, total_price, payment_method) VALUES ($1, $2, $3) RETURNING *`,
+      [req.user.id, totalPrice.toFixed(2), payment_method]
     );
 
     // Create order items
@@ -52,7 +56,7 @@ router.post('/', async (req, res, next) => {
       product_name: i.product_name,
       unit_price: i.price
     }));
-    const message = generateMessage(orderItemsForMsg, totalPrice, order.id);
+    const message = generateMessage(orderItemsForMsg, totalPrice, order.id, payment_method);
     const whatsappUrl = generateUrl(settingsMap.whatsapp_number, message);
 
     // Save WhatsApp message to order

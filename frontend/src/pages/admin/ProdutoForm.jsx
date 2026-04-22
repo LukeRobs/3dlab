@@ -27,29 +27,74 @@ function NewHint({ children }) {
 
 function OptionImageEditor({ defaultValue, onSave, onCancel }) {
   const [url, setUrl] = useState(defaultValue);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  async function handleFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const { data } = await api.post('/admin/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setUrl(data.url);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
-    <div className="flex gap-1.5 items-center mt-0.5">
-      {url && (
-        <img src={url} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0 border border-gray-200 dark:border-[#2a2a2a]" onError={e => e.target.style.display='none'} />
-      )}
-      <input
-        type="url"
-        autoFocus
-        value={url}
-        onChange={e => setUrl(e.target.value)}
-        placeholder="URL da foto desta variação"
-        className="flex-1 rounded-lg border border-green-300 dark:border-[#39ff14]/40 bg-white dark:bg-[#111] px-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
-        onKeyDown={e => { if (e.key === 'Enter') onSave(url); if (e.key === 'Escape') onCancel(); }}
-      />
-      <button
-        onClick={() => onSave(url)}
-        className="text-xs bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-2 py-1 rounded-lg font-medium hover:bg-green-700 transition-colors"
-      >
-        OK
-      </button>
-      <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600 px-1 py-1 transition-colors">
-        ✕
-      </button>
+    <div className="flex flex-col gap-1.5 mt-0.5 p-2 rounded-lg bg-gray-50 dark:bg-[#111] border border-green-200 dark:border-[#39ff14]/30">
+      <div className="flex gap-1.5 items-center">
+        {url && (
+          <img src={url} alt="" className="w-10 h-10 rounded-lg object-cover flex-shrink-0 border border-gray-200 dark:border-[#2a2a2a]" onError={e => e.target.style.display='none'} />
+        )}
+        <input
+          type="url"
+          autoFocus={!uploading}
+          value={url}
+          onChange={e => setUrl(e.target.value)}
+          placeholder="https://... ou use o botão para enviar arquivo"
+          className="flex-1 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#1a1a1a] px-2.5 py-1.5 text-xs text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
+          onKeyDown={e => { if (e.key === 'Enter') onSave(url); if (e.key === 'Escape') onCancel(); }}
+        />
+      </div>
+      <div className="flex gap-1.5 items-center">
+        {/* File upload button */}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-1.5 text-xs border border-gray-200 dark:border-[#2a2a2a] text-gray-600 dark:text-gray-400 px-2.5 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-[#222] transition-colors disabled:opacity-50"
+        >
+          {uploading ? (
+            <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+          ) : (
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+          )}
+          {uploading ? 'Enviando…' : 'Enviar do computador'}
+        </button>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+        <div className="flex-1" />
+        <button
+          onClick={() => onSave(url)}
+          disabled={uploading}
+          className="text-xs bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-3 py-1.5 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
+        >
+          Salvar
+        </button>
+        <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 transition-colors">
+          Cancelar
+        </button>
+      </div>
     </div>
   );
 }

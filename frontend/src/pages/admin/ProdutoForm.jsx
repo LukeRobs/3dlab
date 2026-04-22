@@ -25,6 +25,35 @@ function NewHint({ children }) {
   );
 }
 
+function OptionImageEditor({ defaultValue, onSave, onCancel }) {
+  const [url, setUrl] = useState(defaultValue);
+  return (
+    <div className="flex gap-1.5 items-center mt-0.5">
+      {url && (
+        <img src={url} alt="" className="w-8 h-8 rounded object-cover flex-shrink-0 border border-gray-200 dark:border-[#2a2a2a]" onError={e => e.target.style.display='none'} />
+      )}
+      <input
+        type="url"
+        autoFocus
+        value={url}
+        onChange={e => setUrl(e.target.value)}
+        placeholder="URL da foto desta variação"
+        className="flex-1 rounded-lg border border-green-300 dark:border-[#39ff14]/40 bg-white dark:bg-[#111] px-2.5 py-1 text-xs text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
+        onKeyDown={e => { if (e.key === 'Enter') onSave(url); if (e.key === 'Escape') onCancel(); }}
+      />
+      <button
+        onClick={() => onSave(url)}
+        className="text-xs bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-2 py-1 rounded-lg font-medium hover:bg-green-700 transition-colors"
+      >
+        OK
+      </button>
+      <button onClick={onCancel} className="text-xs text-gray-400 hover:text-gray-600 px-1 py-1 transition-colors">
+        ✕
+      </button>
+    </div>
+  );
+}
+
 export default function ProdutoForm() {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -49,7 +78,8 @@ export default function ProdutoForm() {
   // Variants state
   const [variantGroups, setVariantGroups] = useState([]);
   const [newGroupName, setNewGroupName] = useState('');
-  const [newOptions, setNewOptions] = useState({}); // { groupId: { name, price_modifier } }
+  const [newOptions, setNewOptions] = useState({}); // { groupId: { name, price_modifier, image_url } }
+  const [editingOptImage, setEditingOptImage] = useState(null); // optId being edited
 
   useEffect(() => {
     api.get('/categorias').then(r => setCategories(r.data));
@@ -194,11 +224,23 @@ export default function ProdutoForm() {
     const { data } = await api.post(`/admin/produtos/${id}/variants/${groupId}/options`, {
       name: opt.name.trim(),
       price_modifier: parseFloat(opt.price_modifier || 0),
+      image_url: opt.image_url?.trim() || null,
     });
     setVariantGroups(prev => prev.map(g =>
       g.id === groupId ? { ...g, options: [...(g.options || []), data] } : g
     ));
-    setNewOptions(prev => ({ ...prev, [groupId]: { name: '', price_modifier: '' } }));
+    setNewOptions(prev => ({ ...prev, [groupId]: { name: '', price_modifier: '', image_url: '' } }));
+  }
+
+  async function handleSetOptionImage(groupId, opt, imageUrl) {
+    const url = imageUrl.trim() || null;
+    await api.put(`/admin/produtos/${id}/variants/${groupId}/options/${opt.id}`, { image_url: url });
+    setVariantGroups(prev => prev.map(g =>
+      g.id === groupId
+        ? { ...g, options: g.options.map(o => o.id === opt.id ? { ...o, image_url: url } : o) }
+        : g
+    ));
+    setEditingOptImage(null);
   }
 
   async function handleDeleteOption(groupId, optId) {
@@ -484,69 +526,102 @@ export default function ProdutoForm() {
                     {/* Options pills */}
                     <div className="flex flex-wrap gap-2 mb-3">
                       {(group.options || []).map(opt => (
-                        <div
-                          key={opt.id}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
-                            opt.is_available
-                              ? 'border-green-200 dark:border-[#39ff14]/30 bg-green-50 dark:bg-[#39ff14]/10 text-green-800 dark:text-[#39ff14]'
-                              : 'border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] text-gray-400 line-through'
-                          }`}
-                        >
-                          <span className="font-medium">{opt.name}</span>
-                          {parseFloat(opt.price_modifier || 0) !== 0 && (
-                            <span className="text-xs opacity-70">
-                              {parseFloat(opt.price_modifier) > 0 ? '+' : ''}R${parseFloat(opt.price_modifier).toFixed(2)}
-                            </span>
+                        <div key={opt.id} className="flex flex-col gap-1">
+                          <div
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-sm transition-colors ${
+                              opt.is_available
+                                ? 'border-green-200 dark:border-[#39ff14]/30 bg-green-50 dark:bg-[#39ff14]/10 text-green-800 dark:text-[#39ff14]'
+                                : 'border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] text-gray-400 line-through'
+                            }`}
+                          >
+                            {/* Thumbnail if image set */}
+                            {opt.image_url && (
+                              <img src={opt.image_url} alt="" className="w-5 h-5 rounded object-cover flex-shrink-0" />
+                            )}
+                            <span className="font-medium">{opt.name}</span>
+                            {parseFloat(opt.price_modifier || 0) !== 0 && (
+                              <span className="text-xs opacity-70">
+                                {parseFloat(opt.price_modifier) > 0 ? '+' : ''}R${parseFloat(opt.price_modifier).toFixed(2)}
+                              </span>
+                            )}
+                            {/* Set image button */}
+                            <button
+                              onClick={() => setEditingOptImage(editingOptImage === opt.id ? null : opt.id)}
+                              title="Definir foto da variação"
+                              className="opacity-60 hover:opacity-100 transition-opacity ml-0.5"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleToggleOption(group.id, opt)}
+                              title={opt.is_available ? 'Desativar' : 'Ativar'}
+                              className="opacity-60 hover:opacity-100 transition-opacity"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                {opt.is_available
+                                  ? <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                                  : <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                }
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteOption(group.id, opt.id)}
+                              className="opacity-60 hover:opacity-100 text-red-400 hover:text-red-600 transition-all"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                          {/* Inline image URL editor */}
+                          {editingOptImage === opt.id && (
+                            <OptionImageEditor
+                              defaultValue={opt.image_url || ''}
+                              onSave={url => handleSetOptionImage(group.id, opt, url)}
+                              onCancel={() => setEditingOptImage(null)}
+                            />
                           )}
-                          <button
-                            onClick={() => handleToggleOption(group.id, opt)}
-                            title={opt.is_available ? 'Desativar' : 'Ativar'}
-                            className="opacity-60 hover:opacity-100 transition-opacity ml-0.5"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                              {opt.is_available
-                                ? <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                : <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                              }
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleDeleteOption(group.id, opt.id)}
-                            className="opacity-60 hover:opacity-100 text-red-400 hover:text-red-600 transition-all"
-                          >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
                         </div>
                       ))}
                     </div>
 
                     {/* Add option */}
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex flex-col gap-1.5 mt-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Nome da opção (ex: Vermelho)"
+                          value={newOptions[group.id]?.name || ''}
+                          onChange={e => setNewOptions(p => ({ ...p, [group.id]: { ...p[group.id], name: e.target.value } }))}
+                          onKeyDown={e => e.key === 'Enter' && handleAddOption(group.id)}
+                          className="flex-1 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <input
+                          type="number"
+                          placeholder="+R$"
+                          step="0.01"
+                          value={newOptions[group.id]?.price_modifier || ''}
+                          onChange={e => setNewOptions(p => ({ ...p, [group.id]: { ...p[group.id], price_modifier: e.target.value } }))}
+                          className="w-20 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <button
+                          onClick={() => handleAddOption(group.id)}
+                          disabled={!newOptions[group.id]?.name?.trim()}
+                          className="bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 dark:hover:bg-[#2bcc0f] transition-all disabled:opacity-40"
+                        >
+                          + Opção
+                        </button>
+                      </div>
+                      {/* Optional image URL for new option */}
                       <input
-                        type="text"
-                        placeholder="Nome da opção (ex: Vermelho)"
-                        value={newOptions[group.id]?.name || ''}
-                        onChange={e => setNewOptions(p => ({ ...p, [group.id]: { ...p[group.id], name: e.target.value } }))}
-                        onKeyDown={e => e.key === 'Enter' && handleAddOption(group.id)}
-                        className="flex-1 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
+                        type="url"
+                        placeholder="URL da foto desta opção (opcional)"
+                        value={newOptions[group.id]?.image_url || ''}
+                        onChange={e => setNewOptions(p => ({ ...p, [group.id]: { ...p[group.id], image_url: e.target.value } }))}
+                        className="w-full rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] px-2.5 py-1.5 text-sm text-gray-500 dark:text-gray-400 outline-none focus:ring-2 focus:ring-green-500"
                       />
-                      <input
-                        type="number"
-                        placeholder="+R$"
-                        step="0.01"
-                        value={newOptions[group.id]?.price_modifier || ''}
-                        onChange={e => setNewOptions(p => ({ ...p, [group.id]: { ...p[group.id], price_modifier: e.target.value } }))}
-                        className="w-20 rounded-lg border border-gray-200 dark:border-[#2a2a2a] bg-gray-50 dark:bg-[#111] px-2.5 py-1.5 text-sm text-gray-900 dark:text-gray-100 outline-none focus:ring-2 focus:ring-green-500"
-                      />
-                      <button
-                        onClick={() => handleAddOption(group.id)}
-                        disabled={!newOptions[group.id]?.name?.trim()}
-                        className="bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700 dark:hover:bg-[#2bcc0f] transition-all disabled:opacity-40"
-                      >
-                        + Opção
-                      </button>
                     </div>
                   </div>
                 ))}

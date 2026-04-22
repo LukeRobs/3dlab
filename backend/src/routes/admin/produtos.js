@@ -226,7 +226,7 @@ router.get('/:id/variants', async (req, res, next) => {
     );
     for (const g of groups) {
       const { rows: opts } = await pool.query(
-        `SELECT id, name, price_modifier, is_available, sort_order
+        `SELECT id, name, price_modifier, is_available, sort_order, image_url
          FROM product_variant_options WHERE group_id = $1 ORDER BY sort_order ASC, created_at ASC`,
         [g.id]
       );
@@ -276,12 +276,12 @@ router.delete('/:id/variants/:groupId', async (req, res, next) => {
 // POST /api/admin/produtos/:id/variants/:groupId/options
 router.post('/:id/variants/:groupId/options', async (req, res, next) => {
   try {
-    const { name, price_modifier = 0, sort_order = 0 } = req.body;
+    const { name, price_modifier = 0, sort_order = 0, image_url = null } = req.body;
     if (!name) return res.status(400).json({ error: 'name required' });
     const { rows } = await pool.query(
-      `INSERT INTO product_variant_options (group_id, name, price_modifier, sort_order)
-       VALUES ($1,$2,$3,$4) RETURNING *`,
-      [req.params.groupId, name, price_modifier, sort_order]
+      `INSERT INTO product_variant_options (group_id, name, price_modifier, sort_order, image_url)
+       VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+      [req.params.groupId, name, price_modifier, sort_order, image_url || null]
     );
     res.status(201).json(rows[0]);
   } catch (err) { next(err); }
@@ -290,14 +290,16 @@ router.post('/:id/variants/:groupId/options', async (req, res, next) => {
 // PUT /api/admin/produtos/:id/variants/:groupId/options/:optId
 router.put('/:id/variants/:groupId/options/:optId', async (req, res, next) => {
   try {
-    const { name, price_modifier, is_available } = req.body;
+    const { name, price_modifier, is_available, image_url } = req.body;
     const { rows } = await pool.query(
       `UPDATE product_variant_options SET
          name = COALESCE($1, name),
          price_modifier = COALESCE($2, price_modifier),
-         is_available = COALESCE($3, is_available)
-       WHERE id=$4 AND group_id=$5 RETURNING *`,
-      [name, price_modifier, is_available, req.params.optId, req.params.groupId]
+         is_available = COALESCE($3, is_available),
+         image_url = COALESCE($4, image_url)
+       WHERE id=$5 AND group_id=$6 RETURNING *`,
+      [name, price_modifier, is_available, image_url || null,
+       req.params.optId, req.params.groupId]
     );
     if (!rows[0]) return res.status(404).json({ error: 'Option not found' });
     res.json(rows[0]);

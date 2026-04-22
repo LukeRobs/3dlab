@@ -89,6 +89,12 @@ export default function ProductDetail() {
 
   function handleSelectVariant(groupName, optionName) {
     setSelectedVariants(prev => ({ ...prev, [groupName]: optionName }));
+    // If this option has an image, swap the main photo
+    const group = variantGroups.find(g => g.name === groupName);
+    const opt = group?.options?.find(o => o.name === optionName);
+    if (opt?.image_url) {
+      setSelectedImage(opt.image_url);
+    }
   }
 
   // Compute effective price including any price_modifier from selected options

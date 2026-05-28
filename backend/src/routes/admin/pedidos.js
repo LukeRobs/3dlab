@@ -57,4 +57,13 @@ router.put('/:id', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.delete('/:id', async (req, res, next) => {
+  try {
+    await pool.query(`DELETE FROM order_items WHERE order_id = $1`, [req.params.id]);
+    const { rowCount } = await pool.query(`DELETE FROM orders WHERE id = $1`, [req.params.id]);
+    if (rowCount === 0) return res.status(404).json({ error: 'Order not found' });
+    res.status(204).end();
+  } catch (err) { next(err); }
+});
+
 module.exports = router;

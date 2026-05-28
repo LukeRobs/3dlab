@@ -3,10 +3,26 @@ import api from '../../lib/api';
 import AdminLayout from '../../components/AdminLayout';
 
 const STATUS = {
-  pending:   { label: 'Aguardando',   color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' },
-  confirmed: { label: 'Confirmado',   color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-[#39ff14]' },
-  cancelled: { label: 'Cancelado',    color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' },
+  pending:   { label: 'Aguardando',  color: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' },
+  confirmed: { label: 'Confirmado',  color: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-[#39ff14]' },
+  cancelled: { label: 'Cancelado',   color: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' },
 };
+
+function TrashIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    </svg>
+  );
+}
 
 function CheckIcon() {
   return (
@@ -16,11 +32,61 @@ function CheckIcon() {
   );
 }
 
-function XIcon() {
+/* ── Delete confirmation modal ── */
+function DeleteModal({ order, onConfirm, onCancel }) {
   return (
-    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onCancel} />
+      <div className="relative bg-white dark:bg-[#1a1a1a] rounded-2xl border border-gray-200 dark:border-[#2a2a2a] p-6 w-full max-w-sm shadow-2xl">
+        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 mx-auto mb-4">
+          <TrashIcon />
+        </div>
+        <h2 className="text-center font-semibold text-gray-900 dark:text-gray-100 mb-1">Excluir pedido?</h2>
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400 mb-5">
+          O pedido <span className="font-semibold text-gray-800 dark:text-gray-200">#{order.id.substring(0, 8).toUpperCase()}</span> será permanentemente removido. Esta ação não pode ser desfeita.
+        </p>
+        <div className="flex gap-2">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-[#2a2a2a] text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#222] transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition-colors"
+          >
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Status picker inline ── */
+function StatusPicker({ currentStatus, onSelect, onClose }) {
+  const options = [
+    { key: 'pending',   label: 'Aguardando' },
+    { key: 'confirmed', label: 'Confirmado' },
+    { key: 'cancelled', label: 'Cancelado' },
+  ];
+  return (
+    <div className="absolute right-0 top-full mt-1 z-20 bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-[#2a2a2a] rounded-xl shadow-xl overflow-hidden min-w-[160px]">
+      {options.map(o => (
+        <button
+          key={o.key}
+          onClick={() => { onSelect(o.key); onClose(); }}
+          className={`w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-[#222] ${
+            currentStatus === o.key ? 'text-green-600 dark:text-[#39ff14]' : 'text-gray-700 dark:text-gray-300'
+          }`}
+        >
+          {currentStatus === o.key && <CheckIcon />}
+          {currentStatus !== o.key && <span className="w-3.5" />}
+          {o.label}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -28,6 +94,8 @@ export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [editingId, setEditingId] = useState(null);   // id with status picker open
+  const [deleteTarget, setDeleteTarget] = useState(null); // order to delete
 
   useEffect(() => {
     api.get('/admin/pedidos')
@@ -35,9 +103,23 @@ export default function AdminPedidos() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!editingId) return;
+    const handler = () => setEditingId(null);
+    window.addEventListener('click', handler);
+    return () => window.removeEventListener('click', handler);
+  }, [editingId]);
+
   async function updateStatus(id, status) {
     const { data } = await api.put(`/admin/pedidos/${id}`, { status });
     setPedidos(prev => prev.map(p => p.id === id ? { ...p, status: data.status } : p));
+  }
+
+  async function confirmDelete() {
+    await api.delete(`/admin/pedidos/${deleteTarget.id}`);
+    setPedidos(prev => prev.filter(p => p.id !== deleteTarget.id));
+    setDeleteTarget(null);
   }
 
   const filtered = filter === 'all' ? pedidos : pedidos.filter(p => p.status === filter);
@@ -51,6 +133,14 @@ export default function AdminPedidos() {
 
   return (
     <AdminLayout>
+      {deleteTarget && (
+        <DeleteModal
+          order={deleteTarget}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
+
       <div className="mb-6">
         <h1 className="font-display text-3xl text-gray-900 dark:text-gray-100">Pedidos</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{pedidos.length} pedido{pedidos.length !== 1 ? 's' : ''} no total</p>
@@ -124,24 +214,35 @@ export default function AdminPedidos() {
                   </p>
                 </div>
 
-                {p.status === 'pending' && (
-                  <div className="flex gap-2 flex-shrink-0">
+                {/* Actions — always visible */}
+                <div className="flex gap-2 flex-shrink-0 items-start">
+                  {/* Status picker */}
+                  <div className="relative" onClick={e => e.stopPropagation()}>
                     <button
-                      onClick={() => updateStatus(p.id, 'confirmed')}
-                      className="flex items-center gap-1.5 text-xs bg-green-600 dark:bg-[#39ff14] text-white dark:text-black px-3 py-2 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-[#2bcc0f] active:scale-95 transition-all"
+                      onClick={() => setEditingId(prev => prev === p.id ? null : p.id)}
+                      className="flex items-center gap-1.5 text-xs border border-gray-200 dark:border-[#2a2a2a] text-gray-600 dark:text-gray-400 px-3 py-2 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-[#222] active:scale-95 transition-all"
                     >
-                      <CheckIcon />
-                      Confirmar
+                      <PencilIcon />
+                      Editar status
                     </button>
-                    <button
-                      onClick={() => updateStatus(p.id, 'cancelled')}
-                      className="flex items-center gap-1.5 text-xs bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg font-semibold hover:bg-red-200 dark:hover:bg-red-900/40 active:scale-95 transition-all border border-red-200 dark:border-red-800/50"
-                    >
-                      <XIcon />
-                      Cancelar
-                    </button>
+                    {editingId === p.id && (
+                      <StatusPicker
+                        currentStatus={p.status}
+                        onSelect={status => updateStatus(p.id, status)}
+                        onClose={() => setEditingId(null)}
+                      />
+                    )}
                   </div>
-                )}
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => setDeleteTarget(p)}
+                    className="flex items-center gap-1.5 text-xs bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 px-3 py-2 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-95 transition-all border border-red-100 dark:border-red-800/40"
+                  >
+                    <TrashIcon />
+                    Excluir
+                  </button>
+                </div>
               </div>
 
               {/* Items */}

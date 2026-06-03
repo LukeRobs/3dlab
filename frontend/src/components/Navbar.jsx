@@ -24,8 +24,8 @@ function StoreLogo({ size = 'md' }) {
 
 function CartIcon({ count }) {
   return (
-    <Link to="/carrinho" className="relative flex items-center p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition-colors">
-      <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
+    <Link to="/carrinho" className="relative flex items-center p-2 rounded-lg hover:bg-gray-800 transition-colors">
+      <svg className="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.8}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.5 6h13M10 21a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
       </svg>
       {count > 0 && (
@@ -229,14 +229,14 @@ export default function Navbar() {
           </div>
         </div>
 
-      <nav className="bg-white/90 dark:bg-[#0a0a0a]/90 backdrop-blur-md border-b border-gray-200 dark:border-[#2a2a2a]">
+      <nav className="bg-[#0f0f0f] backdrop-blur-md border-b border-gray-800 dark:border-[#2a2a2a]">
         <div className="max-w-7xl mx-auto px-4">
           {/* Desktop row */}
           <div className="hidden md:flex items-center gap-4 h-14">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 flex-shrink-0 mr-2">
               <StoreLogo />
-              <span className="font-display text-2xl text-gray-900 dark:text-gray-100 leading-none tracking-wide">
+              <span className="font-display text-2xl text-gray-100 leading-none tracking-wide">
                 MONTENEGRO 3D LAB
               </span>
             </Link>
@@ -252,7 +252,7 @@ export default function Navbar() {
                   value={query}
                   onChange={e => handleSearchChange(e.target.value)}
                   placeholder="Buscar produtos..."
-                  className="w-full h-9 pl-9 pr-4 rounded-lg text-sm bg-gray-50 dark:bg-[#111111] border border-gray-200 dark:border-[#2a2a2a] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-600 dark:focus:ring-[#39ff14] transition-colors"
+                  className="w-full h-9 pl-9 pr-4 rounded-lg text-sm bg-[#1a1a1a] border border-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-600 dark:focus:ring-[#39ff14] transition-colors"
                 />
                 {searching && (
                   <span className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -276,7 +276,7 @@ export default function Navbar() {
                   {user.role === 'admin' && (
                     <Link
                       to="/admin/dashboard"
-                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition-colors"
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 transition-colors"
                     >
                       Admin
                     </Link>
@@ -284,14 +284,14 @@ export default function Navbar() {
                   {user.role === 'customer' && (
                     <Link
                       to="/conta/pedidos"
-                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition-colors"
+                      className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 transition-colors"
                     >
                       Pedidos
                     </Link>
                   )}
                   <button
                     onClick={handleLogout}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition-colors"
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-800 transition-colors"
                   >
                     Sair
                   </button>
@@ -320,7 +320,7 @@ export default function Navbar() {
             {/* Mobile search icon */}
             <button
               onClick={() => setMobileSearchOpen(v => !v)}
-              className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition-colors"
+              className="p-2 rounded-lg text-gray-400 hover:bg-gray-800 transition-colors"
             >
               <SearchIcon />
             </button>
@@ -331,7 +331,7 @@ export default function Navbar() {
             {/* Hamburger */}
             <button
               onClick={() => setDrawerOpen(v => !v)}
-              className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#2a2a2a] transition-colors"
+              className="p-2 rounded-lg text-gray-400 hover:bg-gray-800 transition-colors"
             >
               <HamburgerIcon open={drawerOpen} />
             </button>
@@ -356,7 +356,7 @@ export default function Navbar() {
                     }, 150);
                   }}
                   placeholder="Buscar produtos..."
-                  className="w-full h-10 pl-9 pr-4 rounded-lg text-sm bg-gray-50 dark:bg-[#111111] border border-gray-200 dark:border-[#2a2a2a] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-600 dark:focus:ring-[#39ff14] transition-colors"
+                  className="w-full h-10 pl-9 pr-4 rounded-lg text-sm bg-[#1a1a1a] border border-gray-700 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-green-600 transition-colors"
                 />
               </div>
               <SearchDropdown />
@@ -366,19 +366,19 @@ export default function Navbar() {
 
         {/* Mobile drawer */}
         {drawerOpen && (
-          <div className="md:hidden border-t border-gray-200 dark:border-[#2a2a2a] bg-white dark:bg-[#0a0a0a]">
+          <div className="md:hidden border-t border-gray-800 bg-[#0f0f0f]">
             <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
               <Link
                 to="/"
                 onClick={() => setDrawerOpen(false)}
-                className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors"
+                className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 transition-colors"
               >
                 Home
               </Link>
               <Link
                 to="/carrinho"
                 onClick={() => setDrawerOpen(false)}
-                className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors"
+                className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 transition-colors"
               >
                 Carrinho {cartCount > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full text-xs bg-green-600 dark:bg-[#39ff14] text-white dark:text-black">{cartCount}</span>}
               </Link>
@@ -389,7 +389,7 @@ export default function Navbar() {
                     <Link
                       to="/admin/dashboard"
                       onClick={() => setDrawerOpen(false)}
-                      className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors"
+                      className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 transition-colors"
                     >
                       Painel Admin
                     </Link>
@@ -398,7 +398,7 @@ export default function Navbar() {
                     <Link
                       to="/conta/pedidos"
                       onClick={() => setDrawerOpen(false)}
-                      className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1a1a1a] transition-colors"
+                      className="px-3 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-800 transition-colors"
                     >
                       Meus Pedidos
                     </Link>

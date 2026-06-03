@@ -44,7 +44,7 @@ const BENEFITS = [
 
 export default function Footer() {
   return (
-    <footer className="bg-gray-900 dark:bg-[#0a0a0a] border-t-2 border-green-600 dark:border-[#39ff14] mt-auto">
+    <footer className="bg-[#0a0a0a] border-t-2 border-green-600 dark:border-[#39ff14] mt-auto">
 
       {/* Benefits strip */}
       <div className="border-b border-gray-800">

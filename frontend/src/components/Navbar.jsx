@@ -215,7 +215,7 @@ export default function Navbar() {
     <>
       <div className="sticky top-0 z-40">
         {/* Rotating announcement bar */}
-        <div className="bg-gray-900 dark:bg-black text-white py-2 px-4 overflow-hidden">
+        <div className="bg-black text-white py-2 px-4 overflow-hidden">
           <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[24px]">
             <div
               key={msgIdx}

@@ -33,6 +33,13 @@ app.use('/api/admin/usuarios',      require('./routes/admin/usuarios'));
 
 app.use(errorHandler);
 
+// Serve frontend (production)
+const frontendDist = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDist));
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(frontendDist, 'index.html'));
+});
+
 module.exports = app;
 
 if (require.main === module) {

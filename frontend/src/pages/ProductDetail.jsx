@@ -14,8 +14,9 @@ function CartIcon() {
   );
 }
 
-function PixBadge({ price }) {
-  const pixPrice = (parseFloat(price) * 0.9).toFixed(2);
+function PixBadge({ price, discount }) {
+  const pct = parseFloat(discount ?? 10);
+  const pixPrice = (parseFloat(price) * (1 - pct / 100)).toFixed(2);
   return (
     <div className="flex items-center gap-2.5 bg-[#39ff14]/10 border border-[#39ff14]/30 rounded-xl px-4 py-3">
       <svg viewBox="0 0 100 100" className="w-7 h-7 flex-shrink-0" fill="none">
@@ -24,7 +25,7 @@ function PixBadge({ price }) {
         <path d="M50 40L60 50L50 60L40 50Z" fill="#39ff14" />
       </svg>
       <div>
-        <p className="text-[#39ff14] text-xs font-semibold uppercase tracking-wide">10% OFF no PIX</p>
+        <p className="text-[#39ff14] text-xs font-semibold uppercase tracking-wide">{pct}% OFF no PIX</p>
         <p className="text-[#39ff14] font-bold text-lg leading-none">
           R$ {pixPrice}
         </p>
@@ -35,7 +36,7 @@ function PixBadge({ price }) {
 
 function ProductDetailSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex flex-col">
       <Navbar />
       <main className="flex-1 max-w-5xl mx-auto px-4 py-10 w-full">
         <div className="flex items-center gap-2 mb-8">
@@ -70,8 +71,15 @@ export default function ProductDetail() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [adding, setAdding] = useState(false);
   const [selectedVariants, setSelectedVariants] = useState({}); // { groupName: optionName }
+  const [pixDiscount, setPixDiscount] = useState(10);
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get('/configuracoes').then(r => {
+      if (r.data.pix_discount_percent) setPixDiscount(parseFloat(r.data.pix_discount_percent));
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     setProduct(null);
@@ -131,7 +139,7 @@ export default function ProductDetail() {
   const primaryImage = selectedImage || product.images?.find(i => i.is_primary)?.url || product.images?.[0]?.url;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-[#0a0a0a] flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-[#0a0a0a] flex flex-col">
       <Navbar />
       <main className="flex-1 max-w-5xl mx-auto px-4 py-10 w-full">
 
@@ -220,7 +228,7 @@ export default function ProductDetail() {
 
             {/* PIX callout */}
             <div className="mb-5">
-              <PixBadge price={getEffectivePrice()} />
+              <PixBadge price={getEffectivePrice()} discount={pixDiscount} />
             </div>
 
             {/* Variant selectors */}

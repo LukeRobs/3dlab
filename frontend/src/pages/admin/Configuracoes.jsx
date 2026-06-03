@@ -157,6 +157,37 @@ export default function Configuracoes() {
           </div>
         </Section>
 
+        {/* PIX discount */}
+        <Section title="Desconto PIX" description="Percentual de desconto oferecido para pagamentos via PIX">
+          <div className="max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              Desconto PIX (%)
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={settings['pix_discount_percent'] ?? '10'}
+                onChange={e => setSettings(s => ({ ...s, pix_discount_percent: e.target.value }))}
+                placeholder="10"
+                className={inputClass}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold pointer-events-none">%</span>
+            </div>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
+              Este valor é exibido na página do produto e no carrinho. Padrão: 10%.
+            </p>
+            {/* Live preview */}
+            <div className="mt-3 flex items-center gap-2 bg-[#39ff14]/10 border border-[#39ff14]/30 rounded-xl px-4 py-3 w-fit">
+              <span className="text-[#39ff14] text-xs font-semibold uppercase tracking-wide">
+                {settings['pix_discount_percent'] ?? 10}% OFF no PIX
+              </span>
+            </div>
+          </div>
+        </Section>
+
         {/* Technical config */}
         <Section title="Cálculo de Custo" description="Parâmetros técnicos para calcular o custo de cada impressão">
           <div className="space-y-4 max-w-sm">

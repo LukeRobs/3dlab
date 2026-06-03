@@ -46,7 +46,14 @@ export default function Cart() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('pix'); // 'pix' | 'full'
+  const [pixDiscount, setPixDiscount] = useState(10);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    api.get('/configuracoes').then(r => {
+      if (r.data.pix_discount_percent) setPixDiscount(parseFloat(r.data.pix_discount_percent));
+    }).catch(() => {});
+  }, []);
 
   const loadCart = useCallback(async () => {
     if (user) {
@@ -96,7 +103,7 @@ export default function Cart() {
   }
 
   const subtotal = items.reduce((sum, i) => sum + parseFloat(i.price || i.unit_price || 0) * i.quantity, 0);
-  const discount = paymentMethod === 'pix' ? subtotal * 0.1 : 0;
+  const discount = paymentMethod === 'pix' ? subtotal * (pixDiscount / 100) : 0;
   const finalTotal = subtotal - discount;
   const itemCount = items.reduce((s, i) => s + i.quantity, 0);
 
@@ -129,6 +136,7 @@ export default function Cart() {
                   item={item}
                   onQuantityChange={handleQuantityChange}
                   onRemove={handleRemove}
+                  pixDiscount={pixDiscount}
                 />
               ))}
             </div>
@@ -178,7 +186,7 @@ export default function Cart() {
                         PIX
                       </p>
                       <p className={`text-[11px] font-bold mt-0.5 ${paymentMethod === 'pix' ? 'text-[#39ff14]' : 'text-green-600 dark:text-green-400'}`}>
-                        10% OFF
+                        {pixDiscount}% OFF
                       </p>
                     </div>
                   </button>
@@ -221,7 +229,7 @@ export default function Cart() {
               {/* Discount row (only PIX) */}
               {paymentMethod === 'pix' && (
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-[#39ff14] font-medium">Desconto PIX (10%)</span>
+                  <span className="text-sm text-[#39ff14] font-medium">Desconto PIX ({pixDiscount}%)</span>
                   <span className="text-sm text-[#39ff14] font-semibold">-R$ {discount.toFixed(2)}</span>
                 </div>
               )}

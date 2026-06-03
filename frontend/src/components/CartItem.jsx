@@ -6,8 +6,8 @@ function TrashIcon() {
   );
 }
 
-export default function CartItem({ item, onQuantityChange, onRemove }) {
-  const pixPrice = (parseFloat(item.price || item.unit_price || 0) * 0.9).toFixed(2);
+export default function CartItem({ item, onQuantityChange, onRemove, pixDiscount = 10 }) {
+  const pixPrice = (parseFloat(item.price || item.unit_price || 0) * (1 - pixDiscount / 100)).toFixed(2);
 
   return (
     <div className="flex items-center gap-3 bg-white dark:bg-[#1a1a1a] rounded-xl border border-gray-200 dark:border-[#2a2a2a] p-3 mb-3 transition-colors hover:border-gray-300 dark:hover:border-[#3a3a3a]">
@@ -45,7 +45,7 @@ export default function CartItem({ item, onQuantityChange, onRemove }) {
           R$ {parseFloat(item.price || item.unit_price || 0).toFixed(2)}
         </p>
         <p className="text-[11px] text-gray-400 dark:text-gray-500">
-          PIX: <span className="text-green-600 dark:text-[#39ff14] font-medium">R$ {pixPrice}</span>
+          PIX {pixDiscount}% OFF: <span className="text-green-600 dark:text-[#39ff14] font-medium">R$ {pixPrice}</span>
         </p>
       </div>
 

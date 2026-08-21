@@ -312,7 +312,7 @@ export default function Navbar() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-1.5 flex-1">
               <StoreLogo size="sm" />
-              <span className="font-display text-xl text-gray-900 dark:text-gray-100 leading-none">
+              <span className="font-display text-xl text-gray-100 leading-none">
                 MONTENEGRO 3D LAB
               </span>
             </Link>

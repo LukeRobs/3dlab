@@ -157,33 +157,69 @@ export default function Configuracoes() {
           </div>
         </Section>
 
-        {/* PIX discount */}
-        <Section title="Desconto PIX" description="Percentual de desconto oferecido para pagamentos via PIX">
-          <div className="max-w-xs">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-              Desconto PIX (%)
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                min="0"
-                max="100"
-                step="1"
-                value={settings['pix_discount_percent'] ?? '10'}
-                onChange={e => setSettings(s => ({ ...s, pix_discount_percent: e.target.value }))}
-                placeholder="10"
-                className={inputClass}
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold pointer-events-none">%</span>
+        {/* PIX popup settings */}
+        <Section title="Popup PIX" description="Configurações do popup de desconto PIX exibido aos visitantes">
+          <div className="space-y-5 max-w-lg">
+            {/* Discount % */}
+            <div className="max-w-xs">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Desconto PIX (%)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={settings['pix_discount_percent'] ?? '10'}
+                  onChange={e => setSettings(s => ({ ...s, pix_discount_percent: e.target.value }))}
+                  placeholder="10"
+                  className={inputClass}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold pointer-events-none">%</span>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Aparece no popup, nas páginas de produto e no carrinho.
+              </p>
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1.5">
-              Este valor é exibido na página do produto e no carrinho. Padrão: 10%.
-            </p>
+
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Texto do popup
+              </label>
+              <textarea
+                rows={3}
+                value={settings['pix_popup_description'] ?? ''}
+                onChange={e => setSettings(s => ({ ...s, pix_popup_description: e.target.value }))}
+                placeholder="Use o PIX como forma de pagamento e ganhe desconto em todo pedido..."
+                className={inputClass + ' resize-none'}
+              />
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                Frase exibida abaixo do percentual de desconto no popup.
+              </p>
+            </div>
+
             {/* Live preview */}
-            <div className="mt-3 flex items-center gap-2 bg-[#39ff14]/10 border border-[#39ff14]/30 rounded-xl px-4 py-3 w-fit">
-              <span className="text-[#39ff14] text-xs font-semibold uppercase tracking-wide">
-                {settings['pix_discount_percent'] ?? 10}% OFF no PIX
-              </span>
+            <div className="rounded-2xl overflow-hidden border border-[#2a2a2a] w-full max-w-xs">
+              <div className="bg-gradient-to-b from-[#0a0a0a] to-[#111] flex flex-col items-center py-6 px-4 border-b border-[#1f1f1f]">
+                <div className="w-14 h-14 rounded-xl bg-[#39ff14]/10 border border-[#39ff14]/25 flex items-center justify-center mb-3">
+                  <svg viewBox="0 0 100 100" className="w-8 h-8" fill="none">
+                    <path d="M50 5L95 50L50 95L5 50Z" fill="#39ff14" fillOpacity="0.15" stroke="#39ff14" strokeWidth="2" />
+                    <path d="M50 20L80 50L50 80L20 50Z" fill="#39ff14" fillOpacity="0.3" />
+                    <path d="M50 35L65 50L50 65L35 50Z" fill="#39ff14" />
+                  </svg>
+                </div>
+                <span className="font-display text-4xl text-[#39ff14] leading-none">
+                  {settings['pix_discount_percent'] ?? 10}% OFF
+                </span>
+                <span className="text-gray-400 text-[10px] mt-1 tracking-[0.2em] uppercase">pagando com pix</span>
+              </div>
+              <div className="bg-[#0f0f0f] px-4 py-3">
+                <p className="text-gray-400 text-xs leading-relaxed text-center">
+                  {settings['pix_popup_description'] || 'Use o PIX como forma de pagamento e ganhe desconto em todo pedido.'}
+                </p>
+              </div>
             </div>
           </div>
         </Section>

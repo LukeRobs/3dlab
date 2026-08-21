@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import api from '../lib/api';
 
 function CloseIcon() {
   return (
@@ -18,11 +19,20 @@ function PixDiamond() {
   );
 }
 
+const DEFAULT_DESC = 'Use o PIX como forma de pagamento e ganhe desconto em todo pedido. Informe ao atendente no WhatsApp ao finalizar.';
+
 export default function PixPopup() {
   const [visible, setVisible] = useState(false);
   const [animate, setAnimate] = useState(false);
+  const [discount, setDiscount] = useState(10);
+  const [description, setDescription] = useState(DEFAULT_DESC);
 
   useEffect(() => {
+    api.get('/configuracoes').then(r => {
+      if (r.data.pix_discount_percent) setDiscount(parseFloat(r.data.pix_discount_percent));
+      if (r.data.pix_popup_description) setDescription(r.data.pix_popup_description);
+    }).catch(() => {});
+
     if (!sessionStorage.getItem('pixPopupSeen')) {
       const t = setTimeout(() => {
         setVisible(true);
@@ -72,18 +82,14 @@ export default function PixPopup() {
 
         {/* Visual area */}
         <div className="relative bg-gradient-to-b from-[#0a0a0a] to-[#111] flex flex-col items-center justify-center py-10 px-6 border-b border-[#1f1f1f]">
-          {/* Glow */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-40 h-40 rounded-full bg-[#39ff14]/5 blur-3xl" />
           </div>
-
-          {/* Icon */}
           <div className="relative w-20 h-20 rounded-2xl bg-[#39ff14]/10 border border-[#39ff14]/25 flex items-center justify-center mb-5">
             <PixDiamond />
           </div>
-
           <span className="font-display text-6xl text-[#39ff14] tracking-wide leading-none">
-            10% OFF
+            {discount}% OFF
           </span>
           <span className="text-gray-400 text-xs mt-1.5 font-medium tracking-[0.2em] uppercase">
             pagando com pix
@@ -93,18 +99,14 @@ export default function PixPopup() {
         {/* Content */}
         <div className="px-6 py-5">
           <p className="text-gray-300 text-sm leading-relaxed text-center mb-5">
-            Use o <span className="text-[#39ff14] font-semibold">PIX</span> como forma de pagamento
-            e ganhe <span className="text-[#39ff14] font-semibold">10% de desconto</span> em todo
-            pedido. Informe ao atendente no WhatsApp ao finalizar.
+            {description}
           </p>
-
           <button
             onClick={close}
             className="w-full bg-[#39ff14] text-black font-bold py-3.5 rounded-xl hover:bg-[#2bcc0f] active:scale-95 transition-all text-sm tracking-wide uppercase"
           >
             Quero aproveitar!
           </button>
-
           <button
             onClick={close}
             className="w-full mt-2.5 text-gray-500 hover:text-gray-400 text-xs py-2 transition-colors"

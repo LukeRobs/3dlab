@@ -7,7 +7,7 @@ const router = express.Router();
 // GET /api/configuracoes (public — announce messages + store name)
 router.get('/configuracoes', async (req, res, next) => {
   try {
-    const PUBLIC_KEYS = ['store_name', 'announce_msg_1', 'announce_msg_2', 'announce_msg_3'];
+    const PUBLIC_KEYS = ['store_name', 'announce_msg_1', 'announce_msg_2', 'announce_msg_3', 'pix_discount_percent', 'pix_popup_description'];
     const { rows } = await pool.query(
       `SELECT key, value FROM settings WHERE key = ANY($1)`,
       [PUBLIC_KEYS]

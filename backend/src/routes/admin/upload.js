@@ -8,8 +8,8 @@ const { verifyToken, requireRole } = require('../../middleware/auth');
 const router = express.Router();
 router.use(verifyToken, requireRole('admin'));
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../../../uploads');
+// Ensure uploads directory exists — use UPLOADS_DIR env var to persist across redeployments
+const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, '../../../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }

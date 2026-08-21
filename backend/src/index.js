@@ -9,8 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Serve uploaded images
-app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+// Serve uploaded images — use UPLOADS_DIR env var so images survive redeployments
+const uploadsDir = process.env.UPLOADS_DIR || path.join(__dirname, '../uploads');
+app.use('/uploads', express.static(uploadsDir));
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 app.use('/api/auth',  require('./routes/auth'));
